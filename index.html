@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐋 AL HUT Audio Mixer (Pro Web) 🐋</title>
+    <style>
+        :root {
+            /* Brutalist, raw color palette */
+            --bg: #ffffff; 
+            --panel: #f4f4f4; 
+            --text: #000000;
+            --accent: #ffcc00; 
+            --border-color: #000000;
+            
+            --success: #00ff00; 
+            --warning: #ff8800;
+            --danger: #ff0000;
+            
+            --ambient: #990099; 
+            --sync: #00ffff;   
+        }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ffffff; 
+            background-image: url('your_background.gif');
+            background-repeat: repeat;
+            background-attachment: fixed;
+            background-size: auto; 
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .main-logo {
+            display: block; margin: 0 auto 20px auto; max-width: 100%; width: 400px; 
+        }
+
+        .container {
+            width: 100%; max-width: 1000px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        
+        .frame {
+            background: var(--panel); padding: 15px;
+            border: 3px solid var(--border-color);
+            box-shadow: 6px 6px 0px var(--border-color); 
+            border-radius: 0; 
+        }
+        
+        .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .col { display: flex; flex-direction: column; flex: 1; gap: 10px; }
+        
+        button {
+            border: 2px solid var(--border-color); padding: 10px 15px; border-radius: 0;
+            color: #000; font-weight: bold; cursor: pointer; transition: 0.1s;
+            background-color: var(--accent); text-transform: uppercase;
+            letter-spacing: 1px; box-shadow: 3px 3px 0px var(--border-color);
+        }
+        button:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-grey { background: #dddddd; }
+        .btn-orange { background: var(--warning); }
+        .btn-play { background: var(--success); font-size: 16px; flex: 2; }
+        .btn-record { background: var(--danger); }
+        
+        input[type="file"] { display: none; }
+        .file-label {
+            background-color: #dddddd; padding: 10px 15px; border: 2px solid var(--border-color);
+            box-shadow: 3px 3px 0px var(--border-color); cursor: pointer; font-weight: bold; 
+            display: inline-block; text-align: center; color: #000; text-transform: uppercase;
+            letter-spacing: 1px; transition: 0.1s;
+        }
+        .file-label:hover { background-color: #bbbbbb; transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
+        
+        .slider-container { display: flex; flex-direction: column; align-items: center; font-size: 14px; color: #000; font-weight: bold; }
+        input[type="range"] { cursor: pointer; width: 120px; accent-color: #000; }
+        
+        #status-label { font-size: 14px; color: #000; text-align: right; font-weight: bold; }
+        
+        .track { 
+            background: #ffffff; padding: 15px; display: flex; align-items: center; gap: 15px; 
+            margin-bottom: 15px; border: 2px solid var(--border-color); box-shadow: 4px 4px 0px var(--border-color);
+        }
+        .track-name { flex: 1; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000; }
+        
+        progress { width: 100px; height: 12px; border: 2px solid var(--border-color); accent-color: var(--text); }
+        progress::-webkit-progress-bar { background-color: #fff; }
+        progress::-webkit-progress-value { background-color: #000; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <img src="mixerabokalleb_logo.gif" alt="AL HUT AUDIO MIXER - ABO KALLEB" class="main-logo">
+
+        <div class="frame row">
+            <div class="col">
+                <label for="folder-upload" class="file-label">📁 Load Music Folder</label>
+                <input type="file" id="folder-upload" webkitdirectory directory multiple>
+                <button class="btn-grey" onclick="randomizeVolumes()">🎲 Randomize Volumes</button>
+            </div>
+            <div class="col" style="flex: 2;">
+                <div class="row">
+                    <button id="btn-play" class="btn-play" onclick="toggleMix()">▶ PLAY</button>
+                    <button id="btn-next" class="btn-orange" onclick="startNewMix()">⏭ NEXT MIX</button>
+                </div>
+                <div class="row">
+                    <button class="btn-grey" style="flex: 1;" onclick="resetKnobs()">🔄 Reset Knobs</button>
+                    <button id="btn-record" class="btn-record" style="flex: 1;" onclick="toggleRecord()">🔴 RECORD (WAV)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="frame">
+            <div class="row" style="margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
+                <button id="btn-mode" style="background: var(--sync); width: 150px; color: #000;" onclick="toggleMode()">Mode: STANDARD</button>
+                <div id="status-label">Ready to load files...</div>
+            </div>
+            
+            <div class="row" style="justify-content: space-around;">
+                <div class="slider-container">
+                    <label>Ambient Density: <span id="val-density" style="color:var(--text)">20.0</span>s</label>
+                    <input type="range" id="sl-density" min="10" max="60" value="20" step="1" disabled>
+                </div>
+                <div class="slider-container">
+                    <label>Master Vol: <span id="val-master" style="color:var(--text)">0.70</span></label>
+                    <input type="range" id="sl-master" min="0" max="1" value="0.7" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Reverb: <span id="val-reverb" style="color:var(--text)">0.00</span></label>
+                    <input type="range" id="sl-reverb" min="0" max="1" value="0" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Delay: <span id="val-delay" style="color:var(--text)">0.00</span></label>
+                    <input type="range" id="sl-delay" min="0" max="1" value="0" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Drive: <span id="val-drive" style="color:var(--text)">0.00</span></label>
+                    <input type="range" id="sl-drive" min="0" max="1" value="0" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div class="frame">
+            <h3 style="margin-top:0; color:var(--border-color); text-transform: uppercase;">Active Tracks</h3>
+            <div id="tracks-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx;
+        let allFiles = [];
+        let activeTracks = [];
+        let isPlaying = false;
+        let isAmbientMode = false;
+        let recentTracksHistory = [];
+        
+        let masterGain, reverbNode, delayNode, feedbackGain, driveNode, recordMixNode, scriptNode;
+        
+        let isRecording = false;
+        let recLength = 0;
+        let recBuffersL = [];
+        let recBuffersR = [];
+        let currentRecordTrackNames = ""; 
+
+        let ambientLfoTimer, ambientSwapTimer, progressTimer; 
+        let mixTimeoutId = null; 
+        let currentMixId = 0;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            masterGain = audioCtx.createGain();
+            reverbNode = audioCtx.createConvolver();
+            delayNode = audioCtx.createDelay();
+            feedbackGain = audioCtx.createGain();
+            driveNode = audioCtx.createWaveShaper();
+            recordMixNode = audioCtx.createGain();
+            
+            feedbackGain.gain.value = 0;
+            masterGain.gain.value = 0.7;
+            
+            let length = audioCtx.sampleRate * 2.0; 
+            let impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+            for (let i = 0; i < length; i++) {
+                let decay = Math.exp(-i / (audioCtx.sampleRate * 0.3));
+                impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * decay;
+                impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * decay;
+            }
+            reverbNode.buffer = impulse;
+            
+            masterGain.connect(driveNode);
+            driveNode.connect(delayNode);
+            driveNode.connect(recordMixNode); 
+            
+            delayNode.delayTime.value = 0.5;
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+            delayNode.connect(reverbNode);
+            
+            reverbNode.connect(recordMixNode); 
+            recordMixNode.connect(audioCtx.destination);
+            
+            scriptNode = audioCtx.createScriptProcessor(4096, 2, 2);
+            recordMixNode.connect(scriptNode);
+            scriptNode.connect(audioCtx.destination); 
+            
+            scriptNode.onaudioprocess = function(e) {
+                if (!isRecording) return;
+                recBuffersL.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                recBuffersR.push(new Float32Array(e.inputBuffer.getChannelData(1)));
+                recLength += e.inputBuffer.getChannelData(0).length;
+            };
+
+            setupMasterControls();
+        }
+
+        document.getElementById('folder-upload').addEventListener('change', (e) => {
+            const exts = ['mp3', 'wav', 'flac', 'ogg', 'm4a'];
+            allFiles = Array.from(e.target.files).filter(f => 
+                exts.some(ext => f.name.toLowerCase().endsWith(ext))
+            );
+            recentTracksHistory = []; 
+            setStatus(`Found ${allFiles.length} tracks`);
+            initAudio();
+        });
+
+        function setupMasterControls() {
+            const bindSlider = (id, param, isNode=false) => {
+                const sl = document.getElementById(`sl-${id}`);
+                sl.addEventListener('input', (e) => {
+                    document.getElementById(`val-${id}`).innerText = parseFloat(e.target.value).toFixed(2);
+                    if(isNode) param.value = parseFloat(e.target.value);
+                });
+            };
+            
+            bindSlider('master', masterGain.gain, true);
+            bindSlider('delay', feedbackGain.gain, true); 
+            
+            document.getElementById('sl-drive').addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                document.getElementById('val-drive').innerText = val.toFixed(2);
+                driveNode.curve = val > 0 ? makeDistortionCurve(val * 40) : null;
+            });
+            
+            document.getElementById('sl-density').addEventListener('input', (e) => {
+                document.getElementById('val-density').innerText = e.target.value;
+            });
+        }
+
+        function makeDistortionCurve(amount) {
+            let k = typeof amount === 'number' ? amount : 50,
+                n_samples = 44100, curve = new Float32Array(n_samples), deg = Math.PI / 180, i = 0, x;
+            for ( ; i < n_samples; ++i ) {
+                x = i * 2 / n_samples - 1;
+                curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+            }
+            return curve;
+        }
+
+        function setStatus(msg) { document.getElementById('status-label').innerText = msg; }
+
+        function toggleMode() {
+            isAmbientMode = !isAmbientMode;
+            const btn = document.getElementById('btn-mode');
+            const densitySl = document.getElementById('sl-density');
+            if (isAmbientMode) {
+                btn.innerText = "Mode: AMBIENT";
+                btn.style.background = "var(--ambient)"; 
+                densitySl.disabled = false;
+                setStatus("Ambient Mode");
+            } else {
+                btn.innerText = "Mode: STANDARD";
+                btn.style.background = "var(--sync)"; 
+                densitySl.disabled = true;
+                setStatus("Standard Mode");
+            }
+            if(isPlaying) manageThreads();
+        }
+
+        function toggleMix() {
+            if (allFiles.length === 0) return alert("Please load a folder first!");
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (!isPlaying) startMix();
+            else stopMix();
+        }
+
+        async function startMix() {
+            isPlaying = true;
+            currentMixId++; 
+            const mixId = currentMixId; 
+            
+            const btnPlay = document.getElementById('btn-play');
+            btnPlay.innerText = "⏸ STOP";
+            btnPlay.style.background = "var(--danger)";
+            btnPlay.style.color = "#000";
+            
+            const r = Math.random();
+            let trackCount;
+            if (r < 0.40) trackCount = 3;       
+            else if (r < 0.65) trackCount = 4;  
+            else if (r < 0.85) trackCount = 2;  
+            else if (r < 0.93) trackCount = 1;  
+            else if (r < 0.98) trackCount = 5;  
+            else trackCount = 6;                
+            
+            trackCount = Math.min(trackCount, allFiles.length);
+            
+            let availableFiles = allFiles.filter(f => !recentTracksHistory.includes(f.name));
+            
+            if (availableFiles.length < trackCount) {
+                availableFiles = [...allFiles];
+                recentTracksHistory = []; 
+            }
+
+            let shuffled = [...availableFiles].sort(() => 0.5 - Math.random());
+            let selected = shuffled.slice(0, trackCount);
+            recentTracksHistory = selected.map(f => f.name);
+            
+            setStatus(`Loading ${trackCount} tracks... Please wait.`);
+            document.getElementById('btn-next').disabled = true; 
+            
+            const loadPromises = selected.map((f, i) => loadTrack(f, i, null, mixId, false));
+            await Promise.all(loadPromises);
+            
+            document.getElementById('btn-next').disabled = false;
+            
+            if (currentMixId !== mixId || !isPlaying) return; 
+
+            const startTime = audioCtx.currentTime + 0.1; 
+            activeTracks.forEach(track => track.play(startTime, true));
+
+            renderTracksUI();
+            setStatus(`Playing ${activeTracks.length} tracks synchronously`);
+            manageThreads();
+        }
+
+        function stopMix() {
+            isPlaying = false;
+            currentMixId++; 
+            
+            document.getElementById('btn-play').innerText = "▶ PLAY";
+            document.getElementById('btn-play').style.background = "var(--success)";
+            setStatus("Stopped");
+            
+            clearInterval(ambientLfoTimer);
+            clearInterval(ambientSwapTimer);
+            clearInterval(progressTimer);
+            
+            activeTracks.forEach(t => t.destroy());
+            activeTracks = [];
+            document.getElementById('tracks-container').innerHTML = '';
+            
+            if(isRecording) toggleRecord(); 
+        }
+
+        function startNewMix() {
+            if(isPlaying) stopMix();
+            if(mixTimeoutId) clearTimeout(mixTimeoutId); 
+            
+            document.getElementById('sl-density').value = 20;
+            document.getElementById('val-density').innerText = "20.0";
+            
+            document.getElementById('sl-master').value = 0.7;
+            document.getElementById('val-master').innerText = "0.70";
+            if (masterGain) masterGain.gain.value = 0.7;
+            
+            document.getElementById('sl-reverb').value = 0;
+            document.getElementById('val-reverb').innerText = "0.00";
+            
+            document.getElementById('sl-delay').value = 0;
+            document.getElementById('val-delay').innerText = "0.00";
+            if (feedbackGain) feedbackGain.gain.value = 0;
+            
+            document.getElementById('sl-drive').value = 0;
+            document.getElementById('val-drive').innerText = "0.00";
+            if (driveNode) driveNode.curve = null;
+
+            mixTimeoutId = setTimeout(() => startMix(), 100);
+        }
+
+        async function loadTrack(file, index, replaceOldTrack = null, mixId = currentMixId, playImmediately = true) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                if (mixId !== currentMixId) return null; 
+                
+                const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                if (mixId !== currentMixId) return null; 
+                
+                const panner = audioCtx.createStereoPanner();
+                const gain = audioCtx.createGain();
+                
+                panner.connect(gain);
+                gain.connect(masterGain);
+                
+                const trackObj = {
+                    file: file, 
+                    buffer: decodedBuffer, 
+                    panner: panner, 
+                    gain: gain,
+                    baseVol: replaceOldTrack ? replaceOldTrack.baseVol : 0.7,
+                    basePan: replaceOldTrack ? replaceOldTrack.basePan : 0.0,
+                    speed: replaceOldTrack ? replaceOldTrack.speed : 1.0,
+                    sourceNode: null,
+                    startedAt: 0,
+                    randomOffset: Math.random() * decodedBuffer.duration, 
+                    
+                    play: function(when = 0, forceOffset = false) {
+                        this.stop(); 
+                        this.sourceNode = audioCtx.createBufferSource();
+                        this.sourceNode.buffer = this.buffer;
+                        this.sourceNode.loop = true; 
+                        this.sourceNode.playbackRate.value = this.speed;
+                        this.sourceNode.connect(this.panner);
+                        
+                        let offset = 0;
+                        if (forceOffset) offset = this.randomOffset;
+
+                        this.sourceNode.start(when, offset);
+                        this.startedAt = when === 0 ? audioCtx.currentTime : when;
+                    },
+                    
+                    stop: function() {
+                        if (this.sourceNode) {
+                            try { this.sourceNode.stop(); } catch(e){}
+                            try { this.sourceNode.disconnect(); } catch(e){}
+                            this.sourceNode = null;
+                        }
+                    },
+                    
+                    destroy: function() {
+                        this.stop();
+                        if (this.gain) { try { this.gain.disconnect(); } catch(e){} }
+                        if (this.panner) { try { this.panner.disconnect(); } catch(e){} }
+                    }
+                };
+                
+                trackObj.gain.gain.value = trackObj.baseVol;
+                trackObj.panner.pan.value = trackObj.basePan;
+                
+                if (replaceOldTrack) {
+                    const idx = activeTracks.indexOf(replaceOldTrack);
+                    if (idx !== -1) {
+                        replaceOldTrack.destroy(); 
+                        activeTracks[idx] = trackObj;
+                    } else {
+                        trackObj.destroy();
+                        return null;
+                    }
+                } else {
+                    activeTracks.push(trackObj);
+                }
+                
+                if (playImmediately && isPlaying) {
+                    trackObj.play(0, true);
+                    renderTracksUI();
+                    setStatus(`Playing ${activeTracks.length} tracks`);
+                }
+
+                return trackObj;
+                
+            } catch (err) {
+                console.error("Decode error", err);
+                setStatus(`Failed to decode ${file.name}`);
+                return null;
+            }
+        }
+
+        function manualReplace(index) {
+            const oldTrack = activeTracks[index];
+            if (!oldTrack) return;
+
+            const activeNames = activeTracks.map(t => t.file.name);
+            let available = allFiles.filter(f => !activeNames.includes(f.name) && !recentTracksHistory.includes(f.name));
+            
+            if(available.length === 0) available = allFiles.filter(f => !activeNames.includes(f.name));
+            if(available.length === 0) return setStatus("No new files to swap!");
+            
+            const newFile = available[Math.floor(Math.random() * available.length)];
+            recentTracksHistory.push(newFile.name);
+            
+            setStatus(`Swapping track ${index + 1}...`);
+            loadTrack(newFile, index, oldTrack, currentMixId, true);
+        }
+
+        function manageThreads() {
+            clearInterval(ambientLfoTimer);
+            clearInterval(ambientSwapTimer);
+            clearInterval(progressTimer); 
+
+            if (isAmbientMode) {
+                ambientLfoTimer = setInterval(() => {
+                    const now = audioCtx.currentTime;
+                    activeTracks.forEach((track, i) => {
+                        const lfoPan = Math.sin(now * 0.1 + (i*100)) * 0.2;
+                        const lfoVol = 0.85 + (Math.sin(now * 0.07 + (i*50)) * 0.15);
+                        track.panner.pan.value = Math.max(-1, Math.min(1, track.basePan + lfoPan));
+                        track.gain.gain.value = Math.max(0, Math.min(1, track.baseVol * lfoVol));
+                    });
+                }, 100);
+
+                let lastSwapTime = Date.now();
+                ambientSwapTimer = setInterval(() => {
+                    const density = parseFloat(document.getElementById('sl-density').value);
+                    if ((Date.now() - lastSwapTime) / 1000 > density) {
+                        if(activeTracks.length > 0) {
+                            const idx = Math.floor(Math.random() * activeTracks.length);
+                            manualReplace(idx);
+                            lastSwapTime = Date.now();
+                        }
+                    }
+                }, 1000);
+            } 
+
+            progressTimer = setInterval(() => {
+                activeTracks.forEach((t, i) => {
+                    const prog = document.getElementById(`prog-${i}`);
+                    if(prog && t.buffer) {
+                        const elapsed = (audioCtx.currentTime - t.startedAt) * t.speed;
+                        const position = elapsed % t.buffer.duration;
+                        prog.value = position / t.buffer.duration;
+                    }
+                });
+            }, 100);
+        }
+
+        function renderTracksUI() {
+            const container = document.getElementById('tracks-container');
+            container.innerHTML = '';
+            
+            activeTracks.forEach((track, i) => {
+                if (!track) return;
+                const trackNameStr = track.file.name.length > 25 ? track.file.name.substring(0, 25) + '...' : track.file.name;
+                
+                const div = document.createElement('div');
+                div.className = 'track';
+                div.innerHTML = `
+                    <button class="btn-orange" style="width: 80px; padding: 5px;" onclick="manualReplace(${i})">🔄</button>
+                    <div class="track-name" title="${track.file.name}">${i+1}. ${trackNameStr}</div>
+                    
+                    <div class="slider-container">
+                        <label>Vol: <span id="t-vol-val-${i}" style="color:var(--text)">${track.baseVol.toFixed(2)}</span></label>
+                        <input type="range" id="t-vol-${i}" min="0" max="1" step="0.01" value="${track.baseVol}">
+                    </div>
+                    <div class="slider-container">
+                        <label>Speed: <span id="t-spd-val-${i}" style="color:var(--text)">${track.speed.toFixed(2)}</span></label>
+                        <input type="range" id="t-spd-${i}" min="0.5" max="2.0" step="0.01" value="${track.speed}">
+                    </div>
+                    <div class="slider-container">
+                        <label>Pan: <span id="t-pan-val-${i}" style="color:var(--text)">${track.basePan.toFixed(2)}</span></label>
+                        <input type="range" id="t-pan-${i}" min="-1" max="1" step="0.01" value="${track.basePan}">
+                    </div>
+                    
+                    <progress id="prog-${i}" value="0" max="1"></progress>
+                `;
+                container.appendChild(div);
+
+                document.getElementById(`t-vol-${i}`).addEventListener('input', (e) => {
+                    track.baseVol = parseFloat(e.target.value);
+                    document.getElementById(`t-vol-val-${i}`).innerText = track.baseVol.toFixed(2);
+                    if(!isAmbientMode) track.gain.gain.value = track.baseVol;
+                });
+                document.getElementById(`t-spd-${i}`).addEventListener('input', (e) => {
+                    track.speed = parseFloat(e.target.value);
+                    document.getElementById(`t-spd-val-${i}`).innerText = track.speed.toFixed(2);
+                    if(track.sourceNode) track.sourceNode.playbackRate.value = track.speed;
+                });
+                document.getElementById(`t-pan-${i}`).addEventListener('input', (e) => {
+                    track.basePan = parseFloat(e.target.value);
+                    document.getElementById(`t-pan-val-${i}`).innerText = track.basePan.toFixed(2);
+                    if(!isAmbientMode) track.panner.pan.value = track.basePan;
+                });
+            });
+        }
+
+        function randomizeVolumes() {
+            activeTracks.forEach((t, i) => {
+                t.baseVol = (Math.random() * (1.0 - 0.3) + 0.3);
+                if(!isAmbientMode) t.gain.gain.value = t.baseVol;
+            });
+            renderTracksUI();
+        }
+
+        function resetKnobs() {
+            activeTracks.forEach((t, i) => {
+                t.speed = 1.0;
+                t.basePan = 0.0;
+                if(t.sourceNode) t.sourceNode.playbackRate.value = 1.0;
+                if(!isAmbientMode) t.panner.pan.value = 0.0;
+            });
+            renderTracksUI();
+        }
+
+        function toggleRecord() {
+            if(!isPlaying) return setStatus("Start playing first!");
+            
+            const btn = document.getElementById('btn-record');
+            if(!isRecording) {
+                let names = activeTracks.map(t => {
+                    let n = t.file.name.replace(/\.[^/.]+$/, ""); 
+                    n = n.replace(/[^a-zA-Z0-9]/g, ''); 
+                    return n.substring(0, 10); 
+                });
+                currentRecordTrackNames = names.join("_");
+                if (!currentRecordTrackNames) currentRecordTrackNames = "mix";
+
+                recLength = 0;
+                recBuffersL = [];
+                recBuffersR = [];
+                isRecording = true;
+                btn.innerText = "■ STOP RECORDING";
+                btn.style.background = "var(--warning)";
+                setStatus("🔴 Recording Live Mix to WAV...");
+            } else {
+                isRecording = false;
+                btn.innerText = "🔴 RECORD (WAV)";
+                btn.style.background = "var(--danger)";
+                setStatus("Processing WAV file. Please wait...");
+                setTimeout(exportWAV, 50); 
+            }
+        }
+
+        function exportWAV() {
+            if (recLength === 0) {
+                setStatus("Recording was empty.");
+                return;
+            }
+            let bufferL = mergeBuffers(recBuffersL, recLength);
+            let bufferR = mergeBuffers(recBuffersR, recLength);
+            let interleaved = interleave(bufferL, bufferR);
+            let dataview = encodeWAV(interleaved);
+            
+            let audioBlob = new Blob([dataview], { type: 'audio/wav' });
+            let url = URL.createObjectURL(audioBlob);
+            
+            let a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `AlHut_${currentRecordTrackNames}_${Date.now()}.wav`; 
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            setStatus("WAV Recording saved!");
+            recBuffersL = [];
+            recBuffersR = [];
+        }
+
+        function mergeBuffers(recBuffers, recLength) {
+            let result = new Float32Array(recLength);
+            let offset = 0;
+            for (let i = 0; i < recBuffers.length; i++) {
+                result.set(recBuffers[i], offset);
+                offset += recBuffers[i].length;
+            }
+            return result;
+        }
+
+        function interleave(inputL, inputR) {
+            let length = inputL.length + inputR.length;
+            let result = new Float32Array(length);
+            let index = 0, inputIndex = 0;
+            while (index < length) {
+                result[index++] = inputL[inputIndex];
+                result[index++] = inputR[inputIndex];
+                inputIndex++;
+            }
+            return result;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function encodeWAV(samples) {
+            const artistStr = "Al Hut mixer abo kalleb\0"; 
+            const padArtist = artistStr.length % 2 === 1 ? "\0" : "";
+            const finalArtistStr = artistStr + padArtist;
+            
+            const softwareStr = "Al Hut mixer abo kalleb\0"; 
+            const padSoftware = softwareStr.length % 2 === 1 ? "\0" : "";
+            const finalSoftwareStr = softwareStr + padSoftware;
+
+            const listSize = 4 + (8 + finalArtistStr.length) + (8 + finalSoftwareStr.length);
+            const totalDataBytes = samples.length * 2;
+            const riffSize = 36 + totalDataBytes + 8 + listSize;
+
+            let buffer = new ArrayBuffer(8 + riffSize);
+            let view = new DataView(buffer);
+            
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, riffSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 2, true);
+            view.setUint32(24, audioCtx.sampleRate, true);
+            view.setUint32(28, audioCtx.sampleRate * 4, true);
+            view.setUint16(32, 4, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, totalDataBytes, true);
+
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            
+            writeString(view, offset, 'LIST'); offset += 4;
+            view.setUint32(offset, listSize, true); offset += 4;
+            writeString(view, offset, 'INFO'); offset += 4;
+            
+            writeString(view, offset, 'IART'); offset += 4; 
+            view.setUint32(offset, finalArtistStr.length, true); offset += 4;
+            writeString(view, offset, finalArtistStr); offset += finalArtistStr.length;
+            
+            writeString(view, offset, 'ISFT'); offset += 4; 
+            view.setUint32(offset, finalSoftwareStr.length, true); offset += 4;
+            writeString(view, offset, finalSoftwareStr); offset += finalSoftwareStr.length;
+
+            return view;
+        }
+    </script>
+</body>
+</html>
