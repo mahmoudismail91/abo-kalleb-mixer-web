@@ -7,99 +7,196 @@
     <style>
         :root {
             /* Brutalist, raw color palette */
-            --bg: #ffffff; 
-            --panel: #f4f4f4; 
+            --bg: #ffffff;
+            --panel: #f4f4f4;
             --text: #000000;
-            --accent: #ffcc00; 
+            --accent: #ffcc00;
             --border-color: #000000;
-            
-            --success: #00ff00; 
+
+            --success: #00ff00;
             --warning: #ff8800;
             --danger: #ff0000;
-            
-            --ambient: #990099; 
-            --sync: #00ffff;   
+
+            --ambient: #990099;
+            --sync: #00ffff;
         }
-        
+
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: #ffffff; 
-            background-image: url('your_background.gif');
-            background-repeat: repeat;
-            background-attachment: fixed;
-            background-size: auto; 
+            background-color: #ffffff;
             color: var(--text);
             margin: 0; padding: 20px;
             display: flex; flex-direction: column; align-items: center;
         }
+        /* The animated background lives on its own fixed layer: scrolling no longer repaints it every frame. */
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: -1;
+            background: url('your_background.gif') repeat;
+            will-change: transform;
+        }
 
         .main-logo {
-            display: block; margin: 0 auto 20px auto; max-width: 100%; width: 400px; 
+            display: block; margin: 0 auto 20px auto; max-width: 100%; width: 400px; height: auto;
         }
 
         .container {
             width: 100%; max-width: 1000px;
             display: flex; flex-direction: column; gap: 20px;
         }
-        
+
         .frame {
             background: var(--panel); padding: 15px;
             border: 3px solid var(--border-color);
-            box-shadow: 6px 6px 0px var(--border-color); 
-            border-radius: 0; 
+            box-shadow: 6px 6px 0px var(--border-color);
+            border-radius: 0;
         }
-        
+        .frame h3, #drawer h3 { margin: 0; color: var(--border-color); text-transform: uppercase; }
+
         .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .col { display: flex; flex-direction: column; flex: 1; gap: 10px; }
-        
+
         button {
             border: 2px solid var(--border-color); padding: 10px 15px; border-radius: 0;
             color: #000; font-weight: bold; cursor: pointer; transition: 0.1s;
             background-color: var(--accent); text-transform: uppercase;
             letter-spacing: 1px; box-shadow: 3px 3px 0px var(--border-color);
+            font-family: inherit;
         }
         button:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
+
         .btn-grey { background: #dddddd; }
         .btn-orange { background: var(--warning); }
         .btn-play { background: var(--success); font-size: 16px; flex: 2; }
         .btn-record { background: var(--danger); }
-        
+        .btn-small { padding: 5px 9px; box-shadow: 2px 2px 0px var(--border-color); letter-spacing: 0; }
+        .btn-on { background: var(--accent) !important; }
+
         input[type="file"] { display: none; }
         .file-label {
             background-color: #dddddd; padding: 10px 15px; border: 2px solid var(--border-color);
-            box-shadow: 3px 3px 0px var(--border-color); cursor: pointer; font-weight: bold; 
+            box-shadow: 3px 3px 0px var(--border-color); cursor: pointer; font-weight: bold;
             display: inline-block; text-align: center; color: #000; text-transform: uppercase;
             letter-spacing: 1px; transition: 0.1s;
         }
         .file-label:hover { background-color: #bbbbbb; transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
-        
+        .file-label.btn-small { padding: 5px 9px; box-shadow: 2px 2px 0px var(--border-color); letter-spacing: 0; font-size: 13px; }
+
         .slider-container { display: flex; flex-direction: column; align-items: center; font-size: 14px; color: #000; font-weight: bold; }
-        input[type="range"] { cursor: pointer; width: 120px; accent-color: #000; }
-        
-        #status-label { font-size: 14px; color: #000; text-align: right; font-weight: bold; }
-        
-        .track { 
-            background: #ffffff; padding: 15px; display: flex; align-items: center; gap: 15px; 
-            margin-bottom: 15px; border: 2px solid var(--border-color); box-shadow: 4px 4px 0px var(--border-color);
+        /* pan-y: a vertical swipe that starts on a slider scrolls the page instead of grabbing the knob */
+        input[type="range"] { cursor: pointer; width: 120px; accent-color: #000; touch-action: pan-y; }
+        input[type="number"], input[type="text"], select {
+            font-family: inherit; font-weight: bold; font-size: 13px; color: #000; background: #fff;
+            border: 2px solid var(--border-color); border-radius: 0; padding: 4px 6px;
         }
-        .track-name { flex: 1; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000; }
-        
-        progress { width: 100px; height: 12px; border: 2px solid var(--border-color); accent-color: var(--text); }
-        progress::-webkit-progress-bar { background-color: #fff; }
-        progress::-webkit-progress-value { background-color: #000; }
+        input[type="number"] { width: 64px; }
+        select.btn-select {
+            background: #dddddd; padding: 9px 8px; font-size: 13px; text-transform: uppercase;
+            box-shadow: 3px 3px 0px var(--border-color); cursor: pointer;
+        }
+        select.btn-select.btn-on { background: var(--accent); }
+
+        #status-label { font-size: 14px; color: #000; text-align: right; font-weight: bold; flex: 1; min-width: 160px; }
+        #drift-next { font-size: 12px; font-weight: normal; min-height: 1em; }
+        .hint { font-size: 12px; margin-top: 12px; text-align: center; }
+        .mode-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .bpm-box { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 14px; }
+
+        .track {
+            background: #ffffff; padding: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
+            margin-bottom: 15px; border: 2px solid var(--border-color); box-shadow: 4px 4px 0px var(--border-color);
+            animation: track-enter 1.2s ease-out;
+        }
+        .track.held { background: #fff6cc; }
+        .track.held [data-act="hold"] { background: var(--accent); }
+        .track-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .track-name { flex: 1; min-width: 120px; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000; }
+        .track-meta { font-size: 11px; font-weight: normal; }
+        .track .bpm-box { font-size: 12px; }
+        .track .bpm-box input { width: 58px; }
+        @keyframes track-enter { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+
+        /* waveform strip: yellow = the looping slice, red = playhead. Click/drag moves the slice. */
+        canvas.strip {
+            width: 160px; height: 34px; border: 2px solid var(--border-color); background: #fff;
+            cursor: crosshair; touch-action: pan-y; display: block;
+        }
+
+        .role-row, .snap-row {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            background: #fff; border: 2px solid var(--border-color); padding: 8px 10px; margin-top: 10px;
+        }
+        .role-name, .snap-name { flex: 1; min-width: 140px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .role-row label { font-weight: bold; font-size: 13px; }
+        .snap-info { font-size: 12px; }
+        .empty-note { font-size: 13px; margin-top: 10px; }
+        #roles-removed { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; font-weight: bold; }
+
+        details.frame summary { cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 17px; }
+        details.frame p, details.frame li { font-size: 14px; line-height: 1.5; }
+
+        /* settings drawer */
+        .menu-btn {
+            position: fixed; top: 14px; right: 14px; z-index: 30;
+            font-size: 22px; padding: 6px 13px; line-height: 1; background: #fff;
+        }
+        #drawer {
+            position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 100%); box-sizing: border-box;
+            background: var(--panel); border-left: 3px solid var(--border-color); box-shadow: -6px 0 0 var(--border-color);
+            padding: 18px 16px 40px; overflow-y: auto; z-index: 40;
+            transform: translateX(110%); transition: transform 0.25s ease; visibility: hidden;
+        }
+        #drawer.open { transform: none; visibility: visible; }
+        #drawer h4 { margin: 22px 0 6px; text-transform: uppercase; font-size: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; }
+        #drawer p { font-size: 13px; margin: 6px 0; line-height: 1.4; }
+        #drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.25); z-index: 35; }
+        #drawer-backdrop[hidden] { display: none; }
+
+        #drop-overlay {
+            position: fixed; inset: 0; z-index: 50; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 204, 0, 0.85); border: 8px dashed #000;
+            font-size: 28px; font-weight: bold; text-transform: uppercase; text-align: center; padding: 20px;
+        }
+        #drop-overlay[hidden] { display: none; }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .track-name { flex-basis: 100%; order: -1; }
+            .menu-btn { top: 8px; right: 8px; }
+        }
     </style>
 </head>
 <body>
 
+    <div id="drop-overlay" hidden>Drop audio files or folders</div>
+
+    <button id="btn-menu" class="menu-btn" onclick="toggleDrawer()" title="Settings" aria-label="Settings" aria-controls="drawer">☰</button>
+    <div id="drawer-backdrop" hidden onclick="toggleDrawer(false)"></div>
+    <aside id="drawer" aria-label="Settings">
+        <div class="row">
+            <h3>Settings</h3>
+            <button class="btn-grey btn-small" onclick="toggleDrawer(false)" aria-label="Close settings">✕</button>
+        </div>
+
+        <h4>Folder Roles</h4>
+        <p>Each subfolder of your library is a role. Set how many layers it may bring in at once. <b>✕</b> takes a folder out of the mix until you restore it or load again; <b>Max: off</b> keeps it out every time.</p>
+        <div id="roles-list"></div>
+        <div id="roles-removed"></div>
+    </aside>
+
     <div class="container">
-        <img src="mixerabokalleb_logo.gif" alt="AL HUT AUDIO MIXER - ABO KALLEB" class="main-logo">
+        <picture>
+            <source srcset="mixerabokalleb_logo.webp" type="image/webp">
+            <img src="mixerabokalleb_logo.gif" alt="AL HUT AUDIO MIXER - ABO KALLEB" class="main-logo" width="600" height="465">
+        </picture>
 
         <div class="frame row">
             <div class="col">
                 <label for="folder-upload" class="file-label">📁 Load Music Folder</label>
                 <input type="file" id="folder-upload" webkitdirectory directory multiple>
+                <label for="files-upload" class="file-label">🎵 Load Files</label>
+                <input type="file" id="files-upload" multiple accept="audio/*,.mp3,.wav,.flac,.ogg,.oga,.m4a,.aac,.aif,.aiff,.opus,.webm">
                 <button class="btn-grey" onclick="randomizeVolumes()">🎲 Randomize Volumes</button>
             </div>
             <div class="col" style="flex: 2;">
@@ -116,14 +213,26 @@
 
         <div class="frame">
             <div class="row" style="margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
-                <button id="btn-mode" style="background: var(--sync); width: 150px; color: #000;" onclick="toggleMode()">Mode: STANDARD</button>
+                <div class="mode-bar">
+                    <button id="btn-mode" style="background: var(--sync); width: 150px; color: #000;" onclick="toggleMode()">Mode: STANDARD</button>
+                    <button id="btn-loops" class="btn-grey" onclick="toggleLoopMode()" title="FULL loops whole files, SLICES loops short random pieces">Loops: FULL</button>
+                    <select id="sel-hop" class="btn-select" title="Slices jump to a new random spot of their file">
+                        <option value="0">Hop: off</option>
+                        <option value="1">Hop: every loop</option>
+                        <option value="2">Hop: every 2 loops</option>
+                        <option value="4">Hop: every 4 loops</option>
+                    </select>
+                    <button id="btn-sync" class="btn-grey" onclick="toggleSync()" title="Lock layers that have a BPM to one tempo grid">Sync: OFF</button>
+                    <label class="bpm-box">BPM <input type="number" id="in-bpm" min="40" max="240" step="0.1" placeholder="auto"></label>
+                </div>
                 <div id="status-label">Ready to load files...</div>
             </div>
-            
+
             <div class="row" style="justify-content: space-around;">
                 <div class="slider-container">
-                    <label>Ambient Density: <span id="val-density" style="color:var(--text)">20.0</span>s</label>
+                    <label>Drift Every: ~<span id="val-density" style="color:var(--text)">20</span>s</label>
                     <input type="range" id="sl-density" min="10" max="60" value="20" step="1" disabled>
+                    <span id="drift-next"></span>
                 </div>
                 <div class="slider-container">
                     <label>Master Vol: <span id="val-master" style="color:var(--text)">0.70</span></label>
@@ -142,535 +251,1707 @@
                     <input type="range" id="sl-drive" min="0" max="1" value="0" step="0.01">
                 </div>
             </div>
+            <div class="hint">P play/stop · N next mix · M mode · drop files or folders anywhere on the page · ☰ settings</div>
         </div>
 
         <div class="frame">
-            <h3 style="margin-top:0; color:var(--border-color); text-transform: uppercase;">Active Tracks</h3>
+            <div class="row" style="margin-bottom: 10px;">
+                <h3>Active Tracks</h3>
+                <button class="btn-grey btn-small" onclick="addLayerManual()">➕ Add Layer</button>
+            </div>
             <div id="tracks-container"></div>
         </div>
+
+        <div class="frame">
+            <div class="row">
+                <h3>Snapshots</h3>
+                <div class="row" style="justify-content: flex-end;">
+                    <input type="text" id="snap-name" placeholder="name this moment..." maxlength="80">
+                    <button class="btn-small" onclick="saveSnapshot()">💾 Save</button>
+                    <button class="btn-grey btn-small" onclick="exportSnapshots()">⬇ Export</button>
+                    <label for="snap-import" class="file-label btn-small">⬆ Import</label>
+                    <input type="file" id="snap-import" accept=".json,application/json">
+                </div>
+            </div>
+            <div id="snap-list"></div>
+        </div>
+
+        <details class="frame">
+            <summary>❓ How it works</summary>
+            <p>Load a folder of your sounds (or drop files anywhere). Press <b>PLAY</b>: a few random files start looping together, each from a random point. <b>NEXT MIX</b> rolls a new combination. Everything stays on your computer; nothing is uploaded.</p>
+            <ul>
+                <li><b>STANDARD</b> holds the combination until you change it. <b>AMBIENT</b> keeps drifting: every ~N seconds a layer slowly fades out, another fades in, layers come and go, and each one gently breathes in volume, stereo position and brightness.</li>
+                <li><b>📌 Hold</b> a layer you love: drift, hop and NEXT MIX leave it alone. <b>🔄</b> swaps one layer, <b>✂</b> cuts a new loop slice from it, <b>⇆</b> reverses it, <b>✕</b> fades it out.</li>
+                <li>The <b>waveform strip</b> on each layer shows the whole file: yellow is the looping slice, red is the playhead. Click or drag on it to move the slice.</li>
+                <li><b>Loops: SLICES</b> loops short pieces instead of whole files, like instant samples. <b>Hop</b> makes every slice jump to a new random spot of its file every 1, 2 or 4 loops.</li>
+                <li><b>Sync</b> locks layers to one tempo. Give files a BPM by putting it in the name (<i>beat_120bpm.wav</i>) or typing it in the layer's BPM box; files without a BPM keep floating freely.</li>
+                <li><b>☰ Settings → Folder Roles</b>: when your folder has subfolders (e.g. <i>pads</i>, <i>drums</i>, <i>voices</i>), set how many layers each may bring in, like "always 1 pad, max 1 drum", or ✕ a folder out of the mix.</li>
+                <li><b>Snapshots</b> save the current layers and settings so a good accident can be recalled. Export them to move between browsers.</li>
+                <li><b>RECORD</b> captures the live output to a WAV file.</li>
+            </ul>
+        </details>
     </div>
 
     <script>
+        // Ambient "stream" tuning. Swings are how far each layer drifts around its own knob settings.
+        const AMBIENT = {
+            minLayers: 2,
+            maxLayers: 5,
+            volSwing: 0.25,          // layer breathes between 50% and 100% of its Vol knob
+            panSwing: 0.35,          // slow stereo wander around its Pan knob
+            filterBase: 6000,        // Hz, centre of the slow low-pass "tide"
+            filterSwingCents: 1800,  // +-1.5 octaves around filterBase
+            reverseChance: 0.15,     // new drifting layers sometimes arrive backwards...
+            octaveDownChance: 0.1,   // ...or an octave down (only while Sync is off)
+        };
+        const BPM_IN_NAME = /(\d{2,3}(?:\.\d+)?)\s*bpm/i;
+        const LOOSE = '(loose)';
+        const WAV_MAX_BYTES = 3.8e9;   // WAV files can't pass 4 GB, so long recordings split into parts
+        const SEAM_FADE = 0.008;       // seconds of fade either side of a whole-file loop point
+        const STRIP_W = 160, STRIP_H = 34;
+
+        const store = {
+            get(key, fallback) {
+                try { const v = localStorage.getItem('alhut.' + key); return v ? JSON.parse(v) : fallback; }
+                catch (e) { return fallback; }
+            },
+            set(key, value) {
+                try { localStorage.setItem('alhut.' + key, JSON.stringify(value)); } catch (e) {}
+            },
+        };
+
         let audioCtx;
         let allFiles = [];
+        let catFiles = {}, bags = {}, removedFolders = {};
         let activeTracks = [];
         let isPlaying = false;
         let isAmbientMode = false;
-        let recentTracksHistory = [];
-        
-        let masterGain, reverbNode, delayNode, feedbackGain, driveNode, recordMixNode, scriptNode;
-        
-        let isRecording = false;
-        let recLength = 0;
-        let recBuffersL = [];
-        let recBuffersR = [];
-        let currentRecordTrackNames = ""; 
+        let sliceMode = false;
+        let hopEvery = 0;
+        let syncOn = false;
+        let gridT0 = 0, lastMasterBpm = 120;
 
-        let ambientLfoTimer, ambientSwapTimer, progressTimer; 
-        let mixTimeoutId = null; 
+        let roleRules = store.get('roles', {});
+        let bpmMemory = store.get('bpm', {});
+        let snapshots = store.get('snapshots', []);
+
+        let masterGain, trimGain, drivePre, driveNode, drivePost, dryGain;
+        let delaySend, delayNode, feedbackFilter, feedbackGain;
+        let reverbSend, reverbNode, busOut, limiter, safetyOut, recorderNode;
+
+        // One session per recording; a session may still be receiving its last audio after the next one starts.
+        let recSession = null, recSeq = 0, recSplitting = false;
+        const recSessions = {};
+        let recTimer = null;
+
+        let ambientTimer = null, nextDriftAt = 0, progressRaf = null, loopWatchTimer = null;
         let currentMixId = 0;
+        let nextTrackId = 1;
 
+        const $ = id => document.getElementById(id);
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const fileKey = f => f._path || f.webkitRelativePath || f.name;
+        const baseName = f => f.name.replace(/\.[^/.]+$/, "");
+        const folderLabel = cat => (cat === LOOSE ? 'main folder' : cat);
+
+        // ---------- audio graph ----------
+        // tracks -> masterGain -> trim (auto, per layer count) -> drive -+-> dry ---------------+
+        //                                                               +-> delay <-> fb ------+-> busOut -> limiter -> safety clip -> speakers
+        //                                                               +-> reverb ------------+                              (and -> recorder)
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
+
             masterGain = audioCtx.createGain();
-            reverbNode = audioCtx.createConvolver();
-            delayNode = audioCtx.createDelay();
-            feedbackGain = audioCtx.createGain();
+            trimGain = audioCtx.createGain();
+            // Drive is a fixed saturation curve; the knob only moves the gains around it, so turning it never clicks.
+            drivePre = audioCtx.createGain();
             driveNode = audioCtx.createWaveShaper();
-            recordMixNode = audioCtx.createGain();
-            
-            feedbackGain.gain.value = 0;
-            masterGain.gain.value = 0.7;
-            
-            let length = audioCtx.sampleRate * 2.0; 
-            let impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
-            for (let i = 0; i < length; i++) {
-                let decay = Math.exp(-i / (audioCtx.sampleRate * 0.3));
-                impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * decay;
-                impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * decay;
-            }
-            reverbNode.buffer = impulse;
-            
-            masterGain.connect(driveNode);
-            driveNode.connect(delayNode);
-            driveNode.connect(recordMixNode); 
-            
+            driveNode.curve = makeSaturationCurve();
+            driveNode.oversample = '4x';
+            drivePost = audioCtx.createGain();
+            dryGain = audioCtx.createGain();
+            busOut = audioCtx.createGain();
+
+            masterGain.connect(trimGain);
+            trimGain.connect(drivePre);
+            drivePre.connect(driveNode);
+            driveNode.connect(drivePost);
+            drivePost.connect(dryGain);
+            dryGain.connect(busOut);
+
+            delaySend = audioCtx.createGain();
+            delayNode = audioCtx.createDelay(2.0);
             delayNode.delayTime.value = 0.5;
-            delayNode.connect(feedbackGain);
+            feedbackFilter = audioCtx.createBiquadFilter();
+            feedbackFilter.type = 'lowpass';
+            feedbackFilter.frequency.value = 3200;
+            feedbackGain = audioCtx.createGain();
+            delaySend.gain.value = 0;
+            feedbackGain.gain.value = 0;
+            drivePost.connect(delaySend);
+            delaySend.connect(delayNode);
+            delayNode.connect(feedbackFilter);
+            feedbackFilter.connect(feedbackGain);
             feedbackGain.connect(delayNode);
-            delayNode.connect(reverbNode);
-            
-            reverbNode.connect(recordMixNode); 
-            recordMixNode.connect(audioCtx.destination);
-            
-            scriptNode = audioCtx.createScriptProcessor(4096, 2, 2);
-            recordMixNode.connect(scriptNode);
-            scriptNode.connect(audioCtx.destination); 
-            
-            scriptNode.onaudioprocess = function(e) {
-                if (!isRecording) return;
-                recBuffersL.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-                recBuffersR.push(new Float32Array(e.inputBuffer.getChannelData(1)));
-                recLength += e.inputBuffer.getChannelData(0).length;
-            };
+            delayNode.connect(busOut);
 
-            setupMasterControls();
+            reverbSend = audioCtx.createGain();
+            reverbSend.gain.value = 0;
+            reverbNode = audioCtx.createConvolver();
+            reverbNode.buffer = makeImpulse(4.5);
+            drivePost.connect(reverbSend);
+            delayNode.connect(reverbSend);
+            reverbSend.connect(reverbNode);
+            reverbNode.connect(busOut);
+
+            limiter = audioCtx.createDynamicsCompressor();
+            limiter.threshold.value = -3;
+            limiter.knee.value = 2;
+            limiter.ratio.value = 20;
+            limiter.attack.value = 0.004;
+            limiter.release.value = 0.3;
+            busOut.connect(limiter);
+
+            // The compressor can overshoot on sudden peaks; this gentle clipper catches anything above ~0.8
+            // so the output never hard-clips.
+            const safetyPre = audioCtx.createGain();
+            safetyPre.gain.value = 0.5;
+            const safety = audioCtx.createWaveShaper();
+            safety.curve = makeSafetyCurve();
+            safety.oversample = '2x';
+            safetyOut = audioCtx.createGain();
+            safetyOut.gain.value = 2;
+            limiter.connect(safetyPre);
+            safetyPre.connect(safety);
+            safety.connect(safetyOut);
+            safetyOut.connect(audioCtx.destination);
+
+            setupRecorderTap();
+            ['master', 'reverb', 'delay', 'drive'].forEach(applyMaster);
+            updateLayerTrim();
         }
 
-        document.getElementById('folder-upload').addEventListener('change', (e) => {
-            const exts = ['mp3', 'wav', 'flac', 'ogg', 'm4a'];
-            allFiles = Array.from(e.target.files).filter(f => 
-                exts.some(ext => f.name.toLowerCase().endsWith(ext))
-            );
-            recentTracksHistory = []; 
-            setStatus(`Found ${allFiles.length} tracks`);
+        // The recorder taps the output on the audio thread (AudioWorklet), so a busy page can't drop audio
+        // from the recording. Where that isn't available (e.g. opened as a local file) it falls back to a ScriptProcessor.
+        const REC_TAP_CODE = `
+            class RecTap extends AudioWorkletProcessor {
+                constructor() {
+                    super();
+                    this.id = 0;
+                    this.alloc();
+                    this.port.onmessage = (e) => {
+                        const m = e.data;
+                        if (m.cmd === 'start') { this.flush(); this.id = m.id; }
+                        else if (m.cmd === 'stop' && this.id) {
+                            this.flush();
+                            this.port.postMessage({ id: this.id, done: true });
+                            this.id = 0;
+                        }
+                    };
+                }
+                alloc() { this.L = new Float32Array(8192); this.R = new Float32Array(8192); this.n = 0; }
+                flush() {
+                    if (this.id && this.n) this.port.postMessage({ id: this.id, L: this.L, R: this.R, n: this.n }, [this.L.buffer, this.R.buffer]);
+                    this.alloc();
+                }
+                process(inputs) {
+                    if (!this.id) return true;
+                    const ch = inputs[0];
+                    if (ch && ch.length) { this.L.set(ch[0], this.n); this.R.set(ch[1] || ch[0], this.n); }
+                    this.n += 128;
+                    if (this.n + 128 > this.L.length) this.flush();
+                    return true;
+                }
+            }
+            registerProcessor('rec-tap', RecTap);
+        `;
+        let recTap = null;
+
+        async function setupRecorderTap() {
+            if (audioCtx.audioWorklet && window.isSecureContext) {
+                try {
+                    const url = URL.createObjectURL(new Blob([REC_TAP_CODE], { type: 'application/javascript' }));
+                    await audioCtx.audioWorklet.addModule(url);
+                    recTap = new AudioWorkletNode(audioCtx, 'rec-tap', { channelCount: 2, channelCountMode: 'explicit' });
+                    recTap.port.onmessage = (e) => {
+                        const m = e.data, sess = recSessions[m.id];
+                        if (!sess) return;
+                        if (m.done) { delete recSessions[m.id]; exportWAV(sess); }
+                        else appendRecording(sess, m.L.subarray(0, m.n), m.R.subarray(0, m.n));
+                    };
+                    safetyOut.connect(recTap);
+                    recTap.connect(audioCtx.destination);   // outputs silence; keeps the node running
+                    return;
+                } catch (err) {
+                    console.warn("AudioWorklet recorder unavailable, falling back", err);
+                    recTap = null;
+                }
+            }
+            recorderNode = audioCtx.createScriptProcessor(4096, 2, 2);
+            safetyOut.connect(recorderNode);
+            recorderNode.connect(audioCtx.destination);
+            recorderNode.onaudioprocess = function(e) {
+                e.outputBuffer.getChannelData(0).fill(0);
+                e.outputBuffer.getChannelData(1).fill(0);
+                if (recSession) appendRecording(recSession, e.inputBuffer.getChannelData(0), e.inputBuffer.getChannelData(1));
+            };
+        }
+
+        // Stores 16-bit PCM straight away (half the memory of float) and rolls it into Blobs,
+        // which the browser can page out to disk during long sessions.
+        function appendRecording(sess, L, R) {
+            const n = L.length, pcm = new Int16Array(n * 2);
+            for (let i = 0; i < n; i++) {
+                const l = L[i] < -1 ? -1 : L[i] > 1 ? 1 : L[i];
+                const r = R[i] < -1 ? -1 : R[i] > 1 ? 1 : R[i];
+                pcm[2 * i] = l < 0 ? l * 0x8000 : l * 0x7FFF;
+                pcm[2 * i + 1] = r < 0 ? r * 0x8000 : r * 0x7FFF;
+            }
+            sess.chunks.push(pcm);
+            sess.frames += n;
+            if (sess.chunks.length >= 100) { sess.blobs.push(new Blob(sess.chunks)); sess.chunks = []; }
+            if (sess === recSession && sess.frames * 4 > WAV_MAX_BYTES && !recSplitting) {
+                recSplitting = true;
+                setTimeout(() => { toggleRecord(); toggleRecord(); recSplitting = false; }, 0);
+            }
+        }
+
+        // Returns false when there is nothing to play yet.
+        function ensureAudio() {
+            if (allFiles.length === 0) { setStatus("Load a folder or drop some audio files first!"); return false; }
             initAudio();
-        });
-
-        function setupMasterControls() {
-            const bindSlider = (id, param, isNode=false) => {
-                const sl = document.getElementById(`sl-${id}`);
-                sl.addEventListener('input', (e) => {
-                    document.getElementById(`val-${id}`).innerText = parseFloat(e.target.value).toFixed(2);
-                    if(isNode) param.value = parseFloat(e.target.value);
-                });
-            };
-            
-            bindSlider('master', masterGain.gain, true);
-            bindSlider('delay', feedbackGain.gain, true); 
-            
-            document.getElementById('sl-drive').addEventListener('input', (e) => {
-                let val = parseFloat(e.target.value);
-                document.getElementById('val-drive').innerText = val.toFixed(2);
-                driveNode.curve = val > 0 ? makeDistortionCurve(val * 40) : null;
-            });
-            
-            document.getElementById('sl-density').addEventListener('input', (e) => {
-                document.getElementById('val-density').innerText = e.target.value;
-            });
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return true;
         }
 
-        function makeDistortionCurve(amount) {
-            let k = typeof amount === 'number' ? amount : 50,
-                n_samples = 44100, curve = new Float32Array(n_samples), deg = Math.PI / 180, i = 0, x;
-            for ( ; i < n_samples; ++i ) {
-                x = i * 2 / n_samples - 1;
-                curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        function makeImpulse(seconds) {
+            const rate = audioCtx.sampleRate, len = Math.floor(rate * seconds);
+            const impulse = audioCtx.createBuffer(2, len, rate);
+            const preDelay = Math.floor(rate * 0.02);
+            for (let ch = 0; ch < 2; ch++) {
+                const data = impulse.getChannelData(ch);
+                let smoothed = 0;
+                for (let i = preDelay; i < len; i++) {
+                    const t = i / len;
+                    // noise gets darker as the tail decays, like a real room
+                    smoothed += ((Math.random() * 2 - 1) - smoothed) * (0.9 - 0.75 * t);
+                    data[i] = smoothed * Math.pow(1 - t, 2.5);
+                }
+            }
+            return impulse;
+        }
+
+        // tanh(4u) over the shaper's -1..1 input. At Drive 0 the signal is scaled down so it only touches
+        // the straight middle of the curve (clean); more Drive pushes it into the bends.
+        function makeSaturationCurve() {
+            const n = 8193, curve = new Float32Array(n);
+            for (let i = 0; i < n; i++) curve[i] = Math.tanh(4 * (i * 2 / (n - 1) - 1));
+            return curve;
+        }
+
+        // Straight up to 0.8, then rounds off towards 1.0 (input range is +-2 after the 0.5 pre-gain).
+        function makeSafetyCurve() {
+            const n = 4097, curve = new Float32Array(n);
+            for (let i = 0; i < n; i++) {
+                const x = (i * 2 / (n - 1) - 1) * 2, a = Math.abs(x);
+                const y = a <= 0.8 ? a : 0.8 + 0.2 * Math.tanh((a - 0.8) / 0.2);
+                curve[i] = Math.sign(x) * y / 2;
             }
             return curve;
         }
 
-        function setStatus(msg) { document.getElementById('status-label').innerText = msg; }
-
-        function toggleMode() {
-            isAmbientMode = !isAmbientMode;
-            const btn = document.getElementById('btn-mode');
-            const densitySl = document.getElementById('sl-density');
-            if (isAmbientMode) {
-                btn.innerText = "Mode: AMBIENT";
-                btn.style.background = "var(--ambient)"; 
-                densitySl.disabled = false;
-                setStatus("Ambient Mode");
-            } else {
-                btn.innerText = "Mode: STANDARD";
-                btn.style.background = "var(--sync)"; 
-                densitySl.disabled = true;
-                setStatus("Standard Mode");
-            }
-            if(isPlaying) manageThreads();
-        }
-
-        function toggleMix() {
-            if (allFiles.length === 0) return alert("Please load a folder first!");
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            
-            if (!isPlaying) startMix();
-            else stopMix();
-        }
-
-        async function startMix() {
-            isPlaying = true;
-            currentMixId++; 
-            const mixId = currentMixId; 
-            
-            const btnPlay = document.getElementById('btn-play');
-            btnPlay.innerText = "⏸ STOP";
-            btnPlay.style.background = "var(--danger)";
-            btnPlay.style.color = "#000";
-            
-            const r = Math.random();
-            let trackCount;
-            if (r < 0.40) trackCount = 3;       
-            else if (r < 0.65) trackCount = 4;  
-            else if (r < 0.85) trackCount = 2;  
-            else if (r < 0.93) trackCount = 1;  
-            else if (r < 0.98) trackCount = 5;  
-            else trackCount = 6;                
-            
-            trackCount = Math.min(trackCount, allFiles.length);
-            
-            let availableFiles = allFiles.filter(f => !recentTracksHistory.includes(f.name));
-            
-            if (availableFiles.length < trackCount) {
-                availableFiles = [...allFiles];
-                recentTracksHistory = []; 
-            }
-
-            let shuffled = [...availableFiles].sort(() => 0.5 - Math.random());
-            let selected = shuffled.slice(0, trackCount);
-            recentTracksHistory = selected.map(f => f.name);
-            
-            setStatus(`Loading ${trackCount} tracks... Please wait.`);
-            document.getElementById('btn-next').disabled = true; 
-            
-            const loadPromises = selected.map((f, i) => loadTrack(f, i, null, mixId, false));
-            await Promise.all(loadPromises);
-            
-            document.getElementById('btn-next').disabled = false;
-            
-            if (currentMixId !== mixId || !isPlaying) return; 
-
-            const startTime = audioCtx.currentTime + 0.1; 
-            activeTracks.forEach(track => track.play(startTime, true));
-
-            renderTracksUI();
-            setStatus(`Playing ${activeTracks.length} tracks synchronously`);
-            manageThreads();
-        }
-
-        function stopMix() {
-            isPlaying = false;
-            currentMixId++; 
-            
-            document.getElementById('btn-play').innerText = "▶ PLAY";
-            document.getElementById('btn-play').style.background = "var(--success)";
-            setStatus("Stopped");
-            
-            clearInterval(ambientLfoTimer);
-            clearInterval(ambientSwapTimer);
-            clearInterval(progressTimer);
-            
-            activeTracks.forEach(t => t.destroy());
-            activeTracks = [];
-            document.getElementById('tracks-container').innerHTML = '';
-            
-            if(isRecording) toggleRecord(); 
-        }
-
-        function startNewMix() {
-            if(isPlaying) stopMix();
-            if(mixTimeoutId) clearTimeout(mixTimeoutId); 
-            
-            document.getElementById('sl-density').value = 20;
-            document.getElementById('val-density').innerText = "20.0";
-            
-            document.getElementById('sl-master').value = 0.7;
-            document.getElementById('val-master').innerText = "0.70";
-            if (masterGain) masterGain.gain.value = 0.7;
-            
-            document.getElementById('sl-reverb').value = 0;
-            document.getElementById('val-reverb').innerText = "0.00";
-            
-            document.getElementById('sl-delay').value = 0;
-            document.getElementById('val-delay').innerText = "0.00";
-            if (feedbackGain) feedbackGain.gain.value = 0;
-            
-            document.getElementById('sl-drive').value = 0;
-            document.getElementById('val-drive').innerText = "0.00";
-            if (driveNode) driveNode.curve = null;
-
-            mixTimeoutId = setTimeout(() => startMix(), 100);
-        }
-
-        async function loadTrack(file, index, replaceOldTrack = null, mixId = currentMixId, playImmediately = true) {
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                if (mixId !== currentMixId) return null; 
-                
-                const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                if (mixId !== currentMixId) return null; 
-                
-                const panner = audioCtx.createStereoPanner();
-                const gain = audioCtx.createGain();
-                
-                panner.connect(gain);
-                gain.connect(masterGain);
-                
-                const trackObj = {
-                    file: file, 
-                    buffer: decodedBuffer, 
-                    panner: panner, 
-                    gain: gain,
-                    baseVol: replaceOldTrack ? replaceOldTrack.baseVol : 0.7,
-                    basePan: replaceOldTrack ? replaceOldTrack.basePan : 0.0,
-                    speed: replaceOldTrack ? replaceOldTrack.speed : 1.0,
-                    sourceNode: null,
-                    startedAt: 0,
-                    randomOffset: Math.random() * decodedBuffer.duration, 
-                    
-                    play: function(when = 0, forceOffset = false) {
-                        this.stop(); 
-                        this.sourceNode = audioCtx.createBufferSource();
-                        this.sourceNode.buffer = this.buffer;
-                        this.sourceNode.loop = true; 
-                        this.sourceNode.playbackRate.value = this.speed;
-                        this.sourceNode.connect(this.panner);
-                        
-                        let offset = 0;
-                        if (forceOffset) offset = this.randomOffset;
-
-                        this.sourceNode.start(when, offset);
-                        this.startedAt = when === 0 ? audioCtx.currentTime : when;
-                    },
-                    
-                    stop: function() {
-                        if (this.sourceNode) {
-                            try { this.sourceNode.stop(); } catch(e){}
-                            try { this.sourceNode.disconnect(); } catch(e){}
-                            this.sourceNode = null;
-                        }
-                    },
-                    
-                    destroy: function() {
-                        this.stop();
-                        if (this.gain) { try { this.gain.disconnect(); } catch(e){} }
-                        if (this.panner) { try { this.panner.disconnect(); } catch(e){} }
-                    }
-                };
-                
-                trackObj.gain.gain.value = trackObj.baseVol;
-                trackObj.panner.pan.value = trackObj.basePan;
-                
-                if (replaceOldTrack) {
-                    const idx = activeTracks.indexOf(replaceOldTrack);
-                    if (idx !== -1) {
-                        replaceOldTrack.destroy(); 
-                        activeTracks[idx] = trackObj;
-                    } else {
-                        trackObj.destroy();
-                        return null;
+        // A loopable copy of part of a buffer. When there's audio after the slice, it is crossfaded into the
+        // slice's first 50 ms so the jump from the end back to the start is seamless. A slice that runs into
+        // the end of the file gets a tiny fade at both ends instead.
+        function makeLoopBuffer(src, start, len, reverse) {
+            const sr = src.sampleRate, n = Math.round(len * sr), s0 = Math.round(start * sr), total = src.length;
+            const xf = Math.min(Math.floor(0.05 * sr), Math.floor(n / 4));
+            const hasTail = s0 + n + xf <= total;
+            const out = audioCtx.createBuffer(src.numberOfChannels, n, sr);
+            for (let ch = 0; ch < src.numberOfChannels; ch++) {
+                const a = src.getChannelData(ch), o = out.getChannelData(ch);
+                for (let i = 0; i < n; i++) o[i] = a[(s0 + i) % total];
+                if (hasTail) {
+                    for (let i = 0; i < xf; i++) {
+                        const g = (i / xf) * Math.PI / 2;
+                        o[i] = o[i] * Math.sin(g) + a[s0 + n + i] * Math.cos(g);
                     }
                 } else {
-                    activeTracks.push(trackObj);
+                    const m = Math.min(Math.floor(0.005 * sr), Math.floor(n / 8));
+                    for (let i = 0; i < m; i++) { const g = i / m; o[i] *= g; o[n - 1 - i] *= g; }
                 }
-                
-                if (playImmediately && isPlaying) {
-                    trackObj.play(0, true);
-                    renderTracksUI();
-                    setStatus(`Playing ${activeTracks.length} tracks`);
-                }
+                if (reverse) o.reverse();
+            }
+            return out;
+        }
 
-                return trackObj;
-                
+        function reversedCopy(src) {
+            const out = audioCtx.createBuffer(src.numberOfChannels, src.length, src.sampleRate);
+            for (let ch = 0; ch < src.numberOfChannels; ch++) {
+                const o = out.getChannelData(ch);
+                o.set(src.getChannelData(ch));
+                o.reverse();
+            }
+            return out;
+        }
+
+        function computePeaks(buffer, bins) {
+            const d = buffer.getChannelData(0), per = d.length / bins, step = Math.max(1, Math.floor(per / 64));
+            const peaks = new Float32Array(bins);
+            let max = 0;
+            for (let b = 0; b < bins; b++) {
+                let m = 0;
+                const end = Math.min(d.length, Math.floor((b + 1) * per));
+                for (let i = Math.floor(b * per); i < end; i += step) { const v = Math.abs(d[i]); if (v > m) m = v; }
+                peaks[b] = m;
+                if (m > max) max = m;
+            }
+            if (max > 0) for (let b = 0; b < bins; b++) peaks[b] /= max;
+            return peaks;
+        }
+
+        // ---------- master controls ----------
+        function applyMaster(id) {
+            if (!audioCtx) return;
+            const v = parseFloat($(`sl-${id}`).value), now = audioCtx.currentTime;
+            if (id === 'master') masterGain.gain.setTargetAtTime(v, now, 0.03);
+            if (id === 'reverb') reverbSend.gain.setTargetAtTime(v * 0.8, now, 0.05);
+            if (id === 'delay') {
+                delaySend.gain.setTargetAtTime(v * 0.8, now, 0.05);
+                feedbackGain.gain.setTargetAtTime(v * 0.75, now, 0.05);
+            }
+            if (id === 'drive') {
+                // small-signal gain = 3.2^v: clean and unchanged at 0, warmer and a bit louder as it rises
+                drivePre.gain.setTargetAtTime(Math.pow(64, v) / 64, now, 0.05);
+                drivePost.gain.setTargetAtTime(16 * Math.pow(0.05, v), now, 0.05);
+            }
+            if (id === 'reverb' || id === 'delay') {
+                // pull the dry signal back as the effects come up, so they don't just add loudness
+                const rev = parseFloat($('sl-reverb').value), del = parseFloat($('sl-delay').value);
+                dryGain.gain.setTargetAtTime(1 - 0.3 * rev - 0.15 * del, now, 0.05);
+            }
+        }
+
+        // Several full-level layers add up fast; scale the sum down gently as layers pile up.
+        function updateLayerTrim() {
+            if (!trimGain) return;
+            const n = Math.max(1, activeTracks.length);
+            trimGain.gain.setTargetAtTime(Math.min(1, Math.sqrt(2 / n)), audioCtx.currentTime, 0.8);
+        }
+
+        ['master', 'reverb', 'delay', 'drive'].forEach(id => {
+            $(`sl-${id}`).addEventListener('input', (e) => {
+                $(`val-${id}`).innerText = parseFloat(e.target.value).toFixed(2);
+                applyMaster(id);
+            });
+        });
+
+        $('sl-density').addEventListener('input', (e) => { $('val-density').innerText = e.target.value; });
+        $('sl-density').addEventListener('change', () => {
+            // pull the next drift in if the slider was moved much shorter
+            const maxWait = parseFloat($('sl-density').value) * 1.3 * 1000;
+            if (nextDriftAt && nextDriftAt - performance.now() > maxWait) scheduleAmbient();
+        });
+
+        function setStatus(msg) { $('status-label').innerText = msg; }
+
+        // ---------- settings drawer ----------
+        function toggleDrawer(open) {
+            const drawer = $('drawer');
+            const show = open === undefined ? !drawer.classList.contains('open') : open;
+            drawer.classList.toggle('open', show);
+            $('drawer-backdrop').hidden = !show;
+        }
+
+        // ---------- tempo ----------
+        function masterBpm() { return parseFloat($('in-bpm').value) || lastMasterBpm || 120; }
+
+        // The file's BPM folded by octaves to sit near the master tempo (a 70 BPM loop plays as 140 in a 140 mix).
+        function effBpm(t) {
+            if (!t.bpm) return 0;
+            const m = masterBpm();
+            let b = t.bpm;
+            while (b < m / 1.41) b *= 2;
+            while (b > m * 1.41) b /= 2;
+            return b;
+        }
+        const isSynced = t => syncOn && t.bpm > 0;
+        const syncRate = t => masterBpm() / effBpm(t);
+
+        function nextBar(time) {
+            if (!gridT0) gridT0 = time;
+            const bar = 240 / masterBpm();
+            return gridT0 + Math.ceil((time - gridT0 - 1e-6) / bar) * bar;
+        }
+
+        function bpmFor(file) {
+            const saved = bpmMemory[fileKey(file)];
+            if (saved) return saved;
+            const m = file.name.match(BPM_IN_NAME);
+            const v = m ? parseFloat(m[1]) : 0;
+            return v >= 40 && v <= 300 ? v : 0;
+        }
+
+        function toggleSync() {
+            syncOn = !syncOn;
+            $('btn-sync').innerText = syncOn ? "Sync: ON" : "Sync: OFF";
+            $('btn-sync').classList.toggle('btn-on', syncOn);
+            if (syncOn) {
+                if (!parseFloat($('in-bpm').value)) {
+                    const tagged = activeTracks.find(t => t.bpm);
+                    $('in-bpm').value = tagged ? tagged.bpm : 120;
+                }
+                lastMasterBpm = masterBpm();
+                if (audioCtx && activeTracks.length) {
+                    gridT0 = audioCtx.currentTime + 0.2;
+                    activeTracks.forEach(t => {
+                        if (!t.bpm) return;
+                        if (t.slice) t.slice = makeSlice(t) || t.slice;
+                        t.relaunch(0.05);
+                    });
+                    const free = activeTracks.filter(t => !t.bpm).length;
+                    setStatus(free ? `Synced · ${free} layer(s) have no BPM and float free` : "All layers locked to the grid");
+                }
+            } else {
+                gridT0 = 0;
+            }
+            activeTracks.forEach(updateRowControls);
+        }
+
+        $('in-bpm').addEventListener('change', () => {
+            const v = parseFloat($('in-bpm').value);
+            if (!(v >= 40 && v <= 240)) { $('in-bpm').value = lastMasterBpm; return; }
+            if (syncOn && audioCtx && gridT0) {
+                // keep the bar phase where it is and just stretch the grid
+                const now = audioCtx.currentTime;
+                gridT0 = now - (now - gridT0) / (240 / lastMasterBpm) * (240 / v);
+            }
+            lastMasterBpm = v;
+            activeTracks.forEach(t => { if (isSynced(t)) { t.setSpeed(syncRate(t), true); updateRowControls(t); } });
+        });
+
+        // ---------- loop slices ----------
+        // like = an existing slice whose length (or bar count) should be kept, e.g. when hopping.
+        function makeSlice(t, like = null) {
+            const dur = t.buffer.duration;
+            if (isSynced(t)) {
+                const bar = 240 / effBpm(t);
+                let bars = like && like.bars ? like.bars : [1, 2, 2, 4, 4][Math.floor(Math.random() * 5)];
+                while (bars > 1 && bars * bar > dur * 0.9) bars /= 2;
+                const len = bars * bar;
+                if (len > dur * 0.95) return null;
+                const positions = Math.floor((dur - len) / bar) + 1;
+                return { start: Math.floor(Math.random() * positions) * bar, len, bars };
+            }
+            if (dur < 6) return null;
+            const len = like ? Math.min(like.len, dur * 0.9) : rand(4, Math.min(16, dur * 0.7));
+            return { start: rand(0, dur - len), len };
+        }
+
+        // The slice this file would get if it were centred on fileTime (bar-aligned when synced).
+        function sliceAt(t, fileTime) {
+            const s = t.slice || makeSlice(t);
+            if (!s) return null;
+            const dur = t.buffer.duration;
+            let start = clamp(fileTime - s.len / 2, 0, dur - s.len);
+            if (isSynced(t)) {
+                const bar = 240 / effBpm(t);
+                start = clamp(Math.round(start / bar) * bar, 0, Math.floor((dur - s.len) / bar) * bar);
+            }
+            return Object.assign({}, s, { start });
+        }
+
+        function toggleLoopMode() {
+            setLoopMode(!sliceMode);
+            activeTracks.forEach(t => {
+                t.slice = sliceMode ? makeSlice(t) : null;
+                t.relaunch(isAmbientMode ? 3 : 0.3);
+            });
+        }
+
+        function setLoopMode(on) {
+            sliceMode = on;
+            $('btn-loops').innerText = on ? "Loops: SLICES" : "Loops: FULL";
+            $('btn-loops').classList.toggle('btn-on', on);
+        }
+
+        function setHop(n) {
+            hopEvery = n;
+            $('sel-hop').value = String(n);
+            $('sel-hop').classList.toggle('btn-on', n > 0);
+            activeTracks.forEach(t => { t.loopsUntilHop = 0; });
+        }
+        $('sel-hop').addEventListener('change', (e) => {
+            setHop(parseInt(e.target.value, 10));
+            if (hopEvery && !activeTracks.some(t => t.slice)) setStatus("Hop moves slices: turn Loops: SLICES on, or ✂ a layer");
+        });
+
+        // ---------- files ----------
+        $('folder-upload').addEventListener('change', (e) => loadFiles(e.target.files));
+        $('files-upload').addEventListener('change', (e) => loadFiles(e.target.files));
+
+        function loadFiles(fileList) {
+            const exts = ['.mp3', '.wav', '.flac', '.ogg', '.oga', '.m4a', '.aac', '.aif', '.aiff', '.opus', '.webm'];
+            const files = Array.from(fileList).filter(f => {
+                const n = f.name.toLowerCase();
+                return !n.startsWith('._') && exts.some(ext => n.endsWith(ext));   // skip macOS "._" shadow files
+            });
+            if (!files.length) return setStatus("No audio files found there");
+            allFiles = files;
+            assignCategories(allFiles);
+            catFiles = {};
+            removedFolders = {};
+            allFiles.forEach(f => { (catFiles[f._cat] = catFiles[f._cat] || []).push(f); });
+            bags = {};
+            Object.keys(catFiles).forEach(c => { bags[c] = []; });
+            renderRoles();
+            const cats = Object.keys(catFiles).length;
+            setStatus(`Found ${allFiles.length} tracks${cats > 1 ? ` in ${cats} folders (roles in ☰)` : ''}`);
+            initAudio();
+        }
+
+        // A file's role is its top-level subfolder inside whatever was loaded.
+        function assignCategories(files) {
+            const paths = files.map(f => fileKey(f).split('/'));
+            const firstSegs = new Set(paths.map(p => (p.length > 1 ? p[0] : '')));
+            const sharedRoot = firstSegs.size === 1 && !firstSegs.has('');
+            files.forEach((f, i) => {
+                const rel = sharedRoot ? paths[i].slice(1) : paths[i];
+                f._cat = rel.length > 1 ? rel[0] : LOOSE;
+            });
+        }
+
+        function forgetFile(file) {
+            allFiles = allFiles.filter(f => f !== file);
+            const c = file._cat;
+            if (!catFiles[c]) return;
+            catFiles[c] = catFiles[c].filter(f => f !== file);
+            bags[c] = bags[c].filter(f => f !== file);
+            if (!catFiles[c].length) { delete catFiles[c]; delete bags[c]; renderRoles(); }
+        }
+
+        function removeFolder(cat) {
+            if (!catFiles[cat] || Object.keys(catFiles).length < 2) return;
+            removedFolders[cat] = catFiles[cat];
+            allFiles = allFiles.filter(f => f._cat !== cat);
+            delete catFiles[cat];
+            delete bags[cat];
+            activeTracks.filter(t => t.cat === cat).forEach(t => removeTrack(t, manualFade()));
+            renderRoles();
+            setStatus(`"${folderLabel(cat)}" taken out of the mix`);
+        }
+
+        function restoreFolder(cat) {
+            const files = removedFolders[cat];
+            if (!files) return;
+            delete removedFolders[cat];
+            catFiles[cat] = files;
+            bags[cat] = [];
+            allFiles.push(...files);
+            renderRoles();
+            setStatus(`"${folderLabel(cat)}" is back in the mix`);
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // One shuffle-bag per folder: every file in a folder gets heard once before any of them repeats.
+        function drawFile(excludeKeys, okCat = () => true) {
+            const candidates = [];
+            Object.keys(catFiles).forEach(cat => {
+                if (!okCat(cat)) return;
+                const usable = () => bags[cat].filter(f => !excludeKeys.has(fileKey(f)));
+                let list = usable();
+                if (!list.length) { bags[cat] = shuffle([...catFiles[cat]]); list = usable(); }
+                candidates.push(...list);
+            });
+            if (!candidates.length) return null;
+            const f = candidates[Math.floor(Math.random() * candidates.length)];
+            bags[f._cat].splice(bags[f._cat].indexOf(f), 1);
+            return f;
+        }
+
+        async function decodeFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                return await audioCtx.decodeAudioData(arrayBuffer);
             } catch (err) {
-                console.error("Decode error", err);
-                setStatus(`Failed to decode ${file.name}`);
+                console.error("Decode error", file.name, err);
+                forgetFile(file);
+                setStatus(`Skipped ${file.name} (can't decode)`);
                 return null;
             }
         }
 
-        function manualReplace(index) {
-            const oldTrack = activeTracks[index];
-            if (!oldTrack) return;
+        let dragDepth = 0;
+        const dragHasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
+        document.addEventListener('dragenter', (e) => { if (dragHasFiles(e)) { dragDepth++; $('drop-overlay').hidden = false; } });
+        document.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; $('drop-overlay').hidden = true; } });
+        document.addEventListener('dragover', (e) => { if (dragHasFiles(e)) e.preventDefault(); });
+        document.addEventListener('drop', async (e) => {
+            if (!dragHasFiles(e)) return;
+            e.preventDefault();
+            dragDepth = 0;
+            $('drop-overlay').hidden = true;
+            // entries must be grabbed synchronously, the list is emptied once the event returns
+            const entries = Array.from(e.dataTransfer.items || [])
+                .map(item => item.webkitGetAsEntry && item.webkitGetAsEntry()).filter(Boolean);
+            const plainFiles = Array.from(e.dataTransfer.files);
+            setStatus("Reading dropped files...");
+            loadFiles(entries.length ? await filesFromEntries(entries) : plainFiles);
+        });
 
-            const activeNames = activeTracks.map(t => t.file.name);
-            let available = allFiles.filter(f => !activeNames.includes(f.name) && !recentTracksHistory.includes(f.name));
-            
-            if(available.length === 0) available = allFiles.filter(f => !activeNames.includes(f.name));
-            if(available.length === 0) return setStatus("No new files to swap!");
-            
-            const newFile = available[Math.floor(Math.random() * available.length)];
-            recentTracksHistory.push(newFile.name);
-            
-            setStatus(`Swapping track ${index + 1}...`);
-            loadTrack(newFile, index, oldTrack, currentMixId, true);
+        async function filesFromEntries(entries) {
+            const out = [];
+            const walk = async (entry) => {
+                if (entry.isFile) {
+                    const f = await new Promise((res, rej) => entry.file(res, rej));
+                    f._path = entry.fullPath.replace(/^\//, '');
+                    out.push(f);
+                } else if (entry.isDirectory) {
+                    const reader = entry.createReader();
+                    let batch;
+                    do {
+                        batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+                        for (const child of batch) await walk(child);
+                    } while (batch.length);
+                }
+            };
+            for (const entry of entries) await walk(entry);
+            return out;
         }
 
-        function manageThreads() {
-            clearInterval(ambientLfoTimer);
-            clearInterval(ambientSwapTimer);
-            clearInterval(progressTimer); 
+        // ---------- folder roles ----------
+        function ruleFor(cat) {
+            const r = roleRules[cat] || {};
+            return { min: r.min || 0, max: r.max == null ? Infinity : r.max };
+        }
+        function countCats(tracks) {
+            const counts = {};
+            tracks.forEach(t => { counts[t.cat] = (counts[t.cat] || 0) + 1; });
+            return counts;
+        }
+        const hasRoom = (cat, counts) => (counts[cat] || 0) < ruleFor(cat).max;
+        const missingForMins = counts => Object.keys(catFiles)
+            .reduce((sum, c) => sum + Math.max(0, ruleFor(c).min - (counts[c] || 0)), 0);
 
-            if (isAmbientMode) {
-                ambientLfoTimer = setInterval(() => {
-                    const now = audioCtx.currentTime;
-                    activeTracks.forEach((track, i) => {
-                        const lfoPan = Math.sin(now * 0.1 + (i*100)) * 0.2;
-                        const lfoVol = 0.85 + (Math.sin(now * 0.07 + (i*50)) * 0.15);
-                        track.panner.pan.value = Math.max(-1, Math.min(1, track.basePan + lfoPan));
-                        track.gain.gain.value = Math.max(0, Math.min(1, track.baseVol * lfoVol));
-                    });
-                }, 100);
-
-                let lastSwapTime = Date.now();
-                ambientSwapTimer = setInterval(() => {
-                    const density = parseFloat(document.getElementById('sl-density').value);
-                    if ((Date.now() - lastSwapTime) / 1000 > density) {
-                        if(activeTracks.length > 0) {
-                            const idx = Math.floor(Math.random() * activeTracks.length);
-                            manualReplace(idx);
-                            lastSwapTime = Date.now();
-                        }
-                    }
-                }, 1000);
-            } 
-
-            progressTimer = setInterval(() => {
-                activeTracks.forEach((t, i) => {
-                    const prog = document.getElementById(`prog-${i}`);
-                    if(prog && t.buffer) {
-                        const elapsed = (audioCtx.currentTime - t.startedAt) * t.speed;
-                        const position = elapsed % t.buffer.duration;
-                        prog.value = position / t.buffer.duration;
-                    }
-                });
-            }, 100);
+        // Draws one file that fits the roles: folders under their minimum go first,
+        // then the preferred folder (used so swaps usually replace like with like), then anything with room.
+        function drawFitting(excludeKeys, counts, preferCat = null) {
+            const needy = Object.keys(catFiles).filter(c => (counts[c] || 0) < ruleFor(c).min);
+            if (needy.length) {
+                const f = drawFile(excludeKeys, c => needy.includes(c));
+                if (f) return f;
+            }
+            if (preferCat && hasRoom(preferCat, counts)) {
+                const f = drawFile(excludeKeys, c => c === preferCat);
+                if (f) return f;
+            }
+            return drawFile(excludeKeys, c => hasRoom(c, counts));
         }
 
-        function renderTracksUI() {
-            const container = document.getElementById('tracks-container');
-            container.innerHTML = '';
-            
-            activeTracks.forEach((track, i) => {
-                if (!track) return;
-                const trackNameStr = track.file.name.length > 25 ? track.file.name.substring(0, 25) + '...' : track.file.name;
-                
-                const div = document.createElement('div');
-                div.className = 'track';
-                div.innerHTML = `
-                    <button class="btn-orange" style="width: 80px; padding: 5px;" onclick="manualReplace(${i})">🔄</button>
-                    <div class="track-name" title="${track.file.name}">${i+1}. ${trackNameStr}</div>
-                    
-                    <div class="slider-container">
-                        <label>Vol: <span id="t-vol-val-${i}" style="color:var(--text)">${track.baseVol.toFixed(2)}</span></label>
-                        <input type="range" id="t-vol-${i}" min="0" max="1" step="0.01" value="${track.baseVol}">
-                    </div>
-                    <div class="slider-container">
-                        <label>Speed: <span id="t-spd-val-${i}" style="color:var(--text)">${track.speed.toFixed(2)}</span></label>
-                        <input type="range" id="t-spd-${i}" min="0.5" max="2.0" step="0.01" value="${track.speed}">
-                    </div>
-                    <div class="slider-container">
-                        <label>Pan: <span id="t-pan-val-${i}" style="color:var(--text)">${track.basePan.toFixed(2)}</span></label>
-                        <input type="range" id="t-pan-${i}" min="-1" max="1" step="0.01" value="${track.basePan}">
-                    </div>
-                    
-                    <progress id="prog-${i}" value="0" max="1"></progress>
+        function pickMixFiles(count, keep, leaving) {
+            const counts = countCats(keep);
+            const chosen = new Set(keep.map(t => fileKey(t.file)));
+            const avoid = new Set([...chosen, ...leaving.map(t => fileKey(t.file))]);
+            const target = Math.max(count, missingForMins(counts));
+            const files = [];
+            while (files.length < target) {
+                const f = drawFitting(avoid, counts) || drawFitting(chosen, counts);
+                if (!f) break;
+                files.push(f);
+                chosen.add(fileKey(f));
+                avoid.add(fileKey(f));
+                counts[f._cat] = (counts[f._cat] || 0) + 1;
+            }
+            return files;
+        }
+
+        function renderRoles() {
+            const cats = Object.keys(catFiles).sort();
+            const list = $('roles-list');
+            list.innerHTML = '';
+            if (cats.length < 2) {
+                list.innerHTML = `<div class="empty-note">${allFiles.length
+                    ? 'This library has no subfolders yet.'
+                    : 'Nothing loaded yet.'} Load a folder with subfolders (e.g. <i>pads/</i>, <i>drums/</i>, <i>voices/</i>) and each one appears here.</div>`;
+            }
+            cats.forEach(cat => {
+                const r = ruleFor(cat);
+                const row = document.createElement('div');
+                row.className = 'role-row';
+                row.innerHTML = `
+                    <span class="role-name"></span>
+                    <label>Min <select data-k="min">${[0, 1, 2, 3].map(n => `<option value="${n}">${n}</option>`).join('')}</select></label>
+                    <label>Max <select data-k="max"><option value="">any</option><option value="0">off</option>${[1, 2, 3, 4].map(n => `<option value="${n}">${n}</option>`).join('')}</select></label>
+                    <button class="btn-grey btn-small" data-act="x" title="Take this folder out of the mix">✕</button>
                 `;
-                container.appendChild(div);
-
-                document.getElementById(`t-vol-${i}`).addEventListener('input', (e) => {
-                    track.baseVol = parseFloat(e.target.value);
-                    document.getElementById(`t-vol-val-${i}`).innerText = track.baseVol.toFixed(2);
-                    if(!isAmbientMode) track.gain.gain.value = track.baseVol;
-                });
-                document.getElementById(`t-spd-${i}`).addEventListener('input', (e) => {
-                    track.speed = parseFloat(e.target.value);
-                    document.getElementById(`t-spd-val-${i}`).innerText = track.speed.toFixed(2);
-                    if(track.sourceNode) track.sourceNode.playbackRate.value = track.speed;
-                });
-                document.getElementById(`t-pan-${i}`).addEventListener('input', (e) => {
-                    track.basePan = parseFloat(e.target.value);
-                    document.getElementById(`t-pan-val-${i}`).innerText = track.basePan.toFixed(2);
-                    if(!isAmbientMode) track.panner.pan.value = track.basePan;
-                });
+                row.querySelector('.role-name').textContent = `${folderLabel(cat)} (${catFiles[cat].length})`;
+                row.querySelector('.role-name').title = folderLabel(cat);
+                const minSel = row.querySelector('[data-k="min"]'), maxSel = row.querySelector('[data-k="max"]');
+                minSel.value = String(r.min);
+                maxSel.value = r.max === Infinity ? '' : String(r.max);
+                const save = () => {
+                    roleRules[cat] = { min: parseInt(minSel.value, 10), max: maxSel.value === '' ? null : parseInt(maxSel.value, 10) };
+                    store.set('roles', roleRules);
+                };
+                minSel.addEventListener('change', save);
+                maxSel.addEventListener('change', save);
+                const x = row.querySelector('[data-act="x"]');
+                x.disabled = cats.length < 2;
+                x.addEventListener('click', () => removeFolder(cat));
+                list.appendChild(row);
             });
+
+            const removed = $('roles-removed');
+            removed.innerHTML = '';
+            const gone = Object.keys(removedFolders).sort();
+            if (gone.length) {
+                removed.append('Taken out:');
+                gone.forEach(cat => {
+                    const b = document.createElement('button');
+                    b.className = 'btn-grey btn-small';
+                    b.textContent = `${folderLabel(cat)} ↺`;
+                    b.title = 'Put this folder back in the mix';
+                    b.addEventListener('click', () => restoreFolder(cat));
+                    removed.appendChild(b);
+                });
+            }
+        }
+
+        // ---------- tracks ----------
+        // sources -> filter -> panner -> volGain -> fadeGain -> masterGain
+        // Each source is node -> seam gain (tiny dips at whole-file loop points) -> crossfade gain -> filter,
+        // so a track can relaunch (new slice, reversed, re-synced, hop) with a crossfade inside the track.
+        // volGain/panner/filter each get a very slow LFO whose depth is 0 in STANDARD mode.
+        function createTrack(file, buffer, opts = {}) {
+            const ctx = audioCtx;
+            const openFreq = Math.min(20000, ctx.sampleRate / 2 - 100);
+            const t = {
+                id: nextTrackId++, file, buffer,
+                cat: file._cat, bpm: bpmFor(file),
+                baseVol: opts.baseVol ?? 0.7,
+                basePan: opts.basePan ?? 0,
+                speed: opts.speed ?? 1,
+                reverse: !!opts.reverse,
+                slice: opts.slice ?? null,
+                held: !!opts.held, dead: false, row: null, stripEl: null,
+                bornAt: 0, loopsUntilHop: 0, watchedBoundary: 0,
+                // playback clock: loop-relative position `off` at time `t`, rate ramping linearly v0 -> v1 over r seconds
+                clock: { t: 0, off: 0, v0: 1, v1: 1, r: 0 },
+                playBuffer: buffer, loopStart: 0, loopEnd: 0,
+                current: null, sources: [],
+                peaks: computePeaks(buffer, STRIP_W), stripBg: null, stripDirty: true, previewSlice: null,
+            };
+
+            t.filter = ctx.createBiquadFilter();
+            t.filter.type = 'lowpass';
+            t.filter.Q.value = 0.5;
+            t.filter.frequency.value = openFreq;
+            t.panner = ctx.createStereoPanner();
+            t.volGain = ctx.createGain();
+            t.fadeGain = ctx.createGain();
+            t.fadeGain.gain.value = 0;
+            t.filter.connect(t.panner);
+            t.panner.connect(t.volGain);
+            t.volGain.connect(t.fadeGain);
+            t.fadeGain.connect(masterGain);
+
+            t.lfos = [];
+            const makeLfo = (periodLo, periodHi, target) => {
+                const osc = ctx.createOscillator();
+                const phase = Math.random() * Math.PI * 2;
+                osc.setPeriodicWave(ctx.createPeriodicWave(
+                    new Float32Array([0, Math.cos(phase)]), new Float32Array([0, Math.sin(phase)])));
+                osc.frequency.value = 1 / rand(periodLo, periodHi);
+                const depth = ctx.createGain();
+                depth.gain.value = 0;
+                osc.connect(depth);
+                depth.connect(target);
+                osc.start();
+                t.lfos.push(osc, depth);
+                return depth;
+            };
+            t.volDepth = makeLfo(40, 110, t.volGain.gain);
+            t.panDepth = makeLfo(30, 90, t.panner.pan);
+            t.filterDepth = makeLfo(50, 140, t.filter.detune);
+
+            t.applyParams = function(tc = 0.03) {
+                const now = ctx.currentTime, amb = isAmbientMode;
+                const set = (param, v) => param.setTargetAtTime(v, now, tc);
+                set(t.volGain.gain, amb ? t.baseVol * (1 - AMBIENT.volSwing) : t.baseVol);
+                set(t.volDepth.gain, amb ? t.baseVol * AMBIENT.volSwing : 0);
+                set(t.panner.pan, t.basePan);
+                set(t.panDepth.gain, amb ? AMBIENT.panSwing : 0);
+                set(t.filter.frequency, amb ? AMBIENT.filterBase : openFreq);
+                set(t.filterDepth.gain, amb ? AMBIENT.filterSwingCents : 0);
+            };
+
+            // Builds what actually plays: the whole file or a slice, forwards or reversed.
+            // Synced whole-file loops are trimmed to whole bars so they don't drift off the grid.
+            t.rebuild = function() {
+                if (t.slice) t.playBuffer = makeLoopBuffer(t.buffer, t.slice.start, t.slice.len, t.reverse);
+                else if (t.reverse) t.playBuffer = t._reversed || (t._reversed = reversedCopy(t.buffer));
+                else t.playBuffer = t.buffer;
+                if (!t.reverse) t._reversed = null;
+                t.loopStart = 0;
+                t.loopEnd = 0;
+                if (isSynced(t) && !t.slice) {
+                    const beat = 60 / effBpm(t), bar = beat * 4, dur = t.playBuffer.duration;
+                    const phase = t.reverse ? dur % beat : 0;
+                    const bars = Math.floor((dur - phase) / bar);
+                    if (bars >= 1) { t.loopStart = phase; t.loopEnd = phase + bars * bar; }
+                }
+                t.stripDirty = true;
+            };
+
+            t.loopLen = () => (t.loopEnd ? t.loopEnd - t.loopStart : t.playBuffer.duration);
+
+            t.pickOffset = function() {
+                const len = t.loopLen();
+                if (isSynced(t)) {
+                    const bar = 240 / effBpm(t), step = len >= bar ? bar : bar / 4;
+                    return t.loopStart + Math.floor(Math.random() * Math.max(1, Math.floor(len / step))) * step;
+                }
+                return t.loopStart + Math.random() * len;
+            };
+
+            t.launch = function(when, xfade, offset = null) {
+                const node = ctx.createBufferSource();
+                node.buffer = t.playBuffer;
+                node.loop = true;
+                if (t.loopEnd) { node.loopStart = t.loopStart; node.loopEnd = t.loopEnd; }
+                node.playbackRate.value = t.speed;
+                const seam = ctx.createGain();
+                const g = ctx.createGain();
+                node.connect(seam);
+                seam.connect(g);
+                g.connect(t.filter);
+                const src = { node, seam, g };
+                t.sources.push(src);
+                node.onended = () => {
+                    try { node.disconnect(); seam.disconnect(); g.disconnect(); } catch(e){}
+                    t.sources = t.sources.filter(s => s !== src);
+                };
+
+                const old = t.current;
+                if (old) {
+                    g.gain.value = 0;
+                    g.gain.setValueAtTime(0, when);
+                    g.gain.linearRampToValueAtTime(1, when + xfade);
+                    old.g.gain.setValueAtTime(1, when);
+                    old.g.gain.linearRampToValueAtTime(0, when + xfade);
+                    try { old.node.stop(when + xfade + 0.05); } catch(e){}
+                }
+                if (offset === null) offset = t.pickOffset();
+                node.start(when, offset);
+                t.current = src;
+                t.clock = { t: when, off: offset - t.loopStart, v0: t.speed, v1: t.speed, r: 0 };
+                t.watchedBoundary = 0;
+            };
+
+            // Returns the time it actually starts: synced layers wait for the next bar line.
+            t.start = function(fadeIn, whenHint = 0) {
+                t.rebuild();
+                if (isSynced(t)) t.speed = syncRate(t);
+                let when = Math.max(whenHint, ctx.currentTime + 0.05);
+                if (isSynced(t)) when = nextBar(when);
+                t.bornAt = when;
+                t.applyParams(0.01);
+                t.fadeGain.gain.setValueAtTime(0, when);
+                t.fadeGain.gain.linearRampToValueAtTime(1, when + Math.max(0.02, fadeIn));
+                t.launch(when, 0);
+                return when;
+            };
+
+            // fromSliceStart: begin at the top of the slice (used when you place a slice by hand, so you hear it).
+            t.relaunch = function(xfade, fromSliceStart = false) {
+                if (t.dead) return;
+                t.rebuild();
+                if (isSynced(t)) t.speed = syncRate(t);
+                let when = ctx.currentTime + 0.05;
+                if (isSynced(t)) when = nextBar(when);
+                t.launch(when, Math.max(0.02, xfade), fromSliceStart ? t.loopStart : null);
+                updateRowControls(t);
+            };
+
+            // Jump the slice somewhere new in the file, exactly at the loop point `at`.
+            t.hop = function(at) {
+                const s = makeSlice(t, t.slice);
+                if (!s) return;
+                t.slice = s;
+                t.rebuild();
+                t.launch(at, 0.03, t.loopStart);
+                updateRowControls(t);
+            };
+
+            const advance = (c, dt) => {
+                if (dt <= 0) return 0;
+                if (dt < c.r) return c.v0 * dt + (c.v1 - c.v0) * dt * dt / (2 * c.r);
+                return (c.r ? (c.v0 + c.v1) / 2 * c.r : 0) + c.v1 * (dt - c.r);
+            };
+            t.rateAt = function(time) {
+                const c = t.clock, dt = time - c.t;
+                if (dt <= 0) return c.v0;
+                return dt < c.r ? c.v0 + (c.v1 - c.v0) * dt / c.r : c.v1;
+            };
+            t.position = function(time = ctx.currentTime) {
+                return (t.clock.off + advance(t.clock, time - t.clock.t)) % t.loopLen();
+            };
+
+            // Speed changes ramp linearly over 30 ms, and the clock integrates that exact ramp,
+            // so loop points (for seam fades and hops) stay precisely predicted after any speed change.
+            t.setSpeed = function(v, exact = false) {
+                const at = Math.max(ctx.currentTime, t.clock.t), r = exact ? 0 : 0.03, cur = t.rateAt(at);
+                t.clock = { t: at, off: t.position(at), v0: exact ? v : cur, v1: v, r };
+                t.speed = v;
+                const rate = t.current.node.playbackRate;
+                if (rate.cancelAndHoldAtTime) rate.cancelAndHoldAtTime(at); else rate.cancelScheduledValues(at);
+                if (exact) rate.setValueAtTime(v, at);
+                else { rate.setValueAtTime(cur, at); rate.linearRampToValueAtTime(v, at + r); }
+                // any seam fade already scheduled is now at the wrong moment
+                const seam = t.current.seam.gain;
+                seam.cancelScheduledValues(ctx.currentTime);
+                seam.setValueAtTime(1, ctx.currentTime);
+                t.watchedBoundary = 0;
+            };
+
+            t.scheduleSeamFade = function(at) {
+                const g = t.current.seam.gain;
+                if (at - SEAM_FADE <= ctx.currentTime + 0.005) return;
+                g.setValueAtTime(1, at - SEAM_FADE);
+                g.linearRampToValueAtTime(0, at);
+                g.linearRampToValueAtTime(1, at + SEAM_FADE);
+            };
+
+            t.fadeOut = function(sec, at = 0) {
+                if (t.dead) return;
+                t.dead = true;
+                const now = ctx.currentTime, from = Math.max(now, at), g = t.fadeGain.gain;
+                if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(from);
+                else { g.cancelScheduledValues(from); g.setValueAtTime(g.value, from); }
+                g.linearRampToValueAtTime(0, from + sec);
+                setTimeout(() => t.destroy(), (from - now + sec + 0.2) * 1000);
+            };
+
+            t.destroy = function() {
+                t.dead = true;
+                t.sources.forEach(s => {
+                    try { s.node.stop(); } catch(e){}
+                    try { s.node.disconnect(); s.seam.disconnect(); s.g.disconnect(); } catch(e){}
+                });
+                t.sources = [];
+                t.lfos.forEach(n => { try { if (n.stop) n.stop(); } catch(e){} try { n.disconnect(); } catch(e){} });
+                [t.filter, t.panner, t.volGain, t.fadeGain].forEach(n => { try { n.disconnect(); } catch(e){} });
+                t.playBuffer = t._reversed = null;
+            };
+
+            if (opts.slice === undefined && sliceMode) t.slice = makeSlice(t);
+            return t;
+        }
+
+        // Watches every layer's next loop point a little ahead of time:
+        // whole-file loops get a tiny fade right at the jump (no click), slices get their hop scheduled.
+        function loopWatch() {
+            if (!isPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            activeTracks.forEach(t => {
+                if (t.dead || !t.current || now < t.clock.t) return;
+                const toEnd = (t.loopLen() - t.position(now)) / t.rateAt(now);
+                const boundary = now + toEnd;
+                if (Math.abs(boundary - t.watchedBoundary) < 0.02) return;
+                if (t.slice) {
+                    if (!hopEvery || t.held || toEnd > 0.35) return;
+                    t.watchedBoundary = boundary;
+                    t.loopsUntilHop = (t.loopsUntilHop || hopEvery) - 1;
+                    if (t.loopsUntilHop > 0) return;
+                    t.loopsUntilHop = hopEvery;
+                    t.hop(boundary);
+                } else {
+                    if (toEnd > 1.0) return;
+                    t.watchedBoundary = boundary;
+                    t.scheduleSeamFade(boundary);
+                }
+            });
+        }
+
+        // Extra character for layers that arrive while drifting.
+        function newLayerOpts(forAdd) {
+            if (!isAmbientMode) return {};
+            const opts = {};
+            if (forAdd) { opts.baseVol = rand(0.45, 0.8); opts.basePan = rand(-0.7, 0.7); }
+            if (Math.random() < AMBIENT.reverseChance) opts.reverse = true;
+            if (!syncOn && Math.random() < AMBIENT.octaveDownChance) opts.speed = 0.5;
+            return opts;
+        }
+
+        // ---------- play / stop / next ----------
+        function toggleMode() {
+            isAmbientMode = !isAmbientMode;
+            const btn = $('btn-mode');
+            if (isAmbientMode) {
+                btn.innerText = "Mode: AMBIENT";
+                btn.style.background = "var(--ambient)";
+                $('sl-density').disabled = false;
+                setStatus("Ambient Mode");
+            } else {
+                btn.innerText = "Mode: STANDARD";
+                btn.style.background = "var(--sync)";
+                $('sl-density').disabled = true;
+                setStatus("Standard Mode");
+            }
+            activeTracks.forEach(t => t.applyParams(1.0));
+            scheduleAmbient();
+        }
+
+        function toggleMix() {
+            if (!ensureAudio()) return;
+            if (!isPlaying) startMix(false);
+            else stopMix();
+        }
+
+        function startNewMix() {
+            if (!ensureAudio()) return;
+            startMix(isPlaying);
+        }
+
+        function setPlayButton(playing) {
+            const btnPlay = $('btn-play');
+            btnPlay.innerText = playing ? "⏸ STOP" : "▶ PLAY";
+            btnPlay.style.background = playing ? "var(--danger)" : "var(--success)";
+        }
+
+        function pickTrackCount() {
+            const r = Math.random();
+            if (r < 0.40) return 3;
+            if (r < 0.65) return 4;
+            if (r < 0.85) return 2;
+            if (r < 0.93) return 1;
+            if (r < 0.98) return 5;
+            return 6;
+        }
+
+        function ambientFadeTime() {
+            return clamp(parseFloat($('sl-density').value) * 0.6, 4, 20);
+        }
+
+        // crossfade=true keeps the current mix playing until the new one is decoded, then blends into it.
+        // plan (from a snapshot) = [{file, opts}] replaces everything, held layers included.
+        async function startMix(crossfade, plan = null) {
+            const mixId = ++currentMixId;
+            isPlaying = true;
+            setPlayButton(true);
+            clearTimeout(ambientTimer);
+
+            const keep = plan ? [] : activeTracks.filter(t => t.held);
+            const leaving = activeTracks.filter(t => !keep.includes(t));
+            let items = plan;
+            if (!items) {
+                let count = isAmbientMode ? 2 + Math.floor(Math.random() * 2) : pickTrackCount();
+                count = Math.max(keep.length ? 0 : 1, count - keep.length);
+                items = pickMixFiles(count, keep, leaving).map(file => ({ file, opts: newLayerOpts(false) }));
+            }
+
+            setStatus(`Loading ${items.length} tracks... Please wait.`);
+            $('btn-next').disabled = true;
+            const buffers = await Promise.all(items.map(it => decodeFile(it.file)));
+            if (mixId !== currentMixId) return;
+            $('btn-next').disabled = false;
+
+            if (syncOn) {
+                if (!parseFloat($('in-bpm').value)) {
+                    const first = items.find(it => bpmFor(it.file));
+                    $('in-bpm').value = first ? bpmFor(first.file) : 120;
+                    lastMasterBpm = masterBpm();
+                }
+                if (!keep.some(isSynced)) gridT0 = 0;   // fresh grid, starting with this mix
+            }
+
+            const fade = isAmbientMode ? ambientFadeTime() : (crossfade ? 1.2 : 0.03);
+            const base = audioCtx.currentTime + 0.1;
+            let stagger = 0, firstStart = 0;
+            const fresh = [];
+            items.forEach((it, i) => {
+                if (!buffers[i]) return;
+                const t = createTrack(it.file, buffers[i], it.opts);
+                const when = t.start(fade, base + stagger);
+                if (!firstStart) firstStart = when;
+                if (isAmbientMode) stagger += rand(2, 5);   // ambient layers enter one by one
+                fresh.push(t);
+            });
+            leaving.forEach(t => t.fadeOut(crossfade ? fade : 0.05, firstStart));
+            activeTracks = [...keep, ...fresh];
+            syncTrackRows();
+
+            if (activeTracks.length === 0 && !isAmbientMode) {
+                stopMix();
+                return setStatus("Couldn't decode those files - try NEXT MIX");
+            }
+            setStatus(`Playing ${activeTracks.length} layers${isAmbientMode ? ' · drifting' : ''}`);
+            scheduleAmbient();
+            startProgressLoop();
+            clearInterval(loopWatchTimer);
+            loopWatchTimer = setInterval(loopWatch, 100);
+        }
+
+        function stopMix() {
+            isPlaying = false;
+            currentMixId++;
+            setPlayButton(false);
+            $('btn-next').disabled = false;
+            setStatus("Stopped");
+
+            clearTimeout(ambientTimer);
+            clearInterval(loopWatchTimer);
+            nextDriftAt = 0;
+            gridT0 = 0;
+            $('drift-next').innerText = '';
+            cancelAnimationFrame(progressRaf);
+
+            activeTracks.forEach(t => t.fadeOut(0.25));
+            activeTracks = [];
+            syncTrackRows();
+
+            // let the fade-out land in the recording before closing it
+            if (recSession) setTimeout(() => { if (recSession && !isPlaying) toggleRecord(); }, 350);
+        }
+
+        // ---------- swapping / layers ----------
+        async function replaceTrack(oldTrack, fade, quiet = false) {
+            const mixId = currentMixId;
+            const counts = countCats(activeTracks.filter(t => t !== oldTrack));
+            const exclude = new Set(activeTracks.map(t => fileKey(t.file)));
+            const file = drawFitting(exclude, counts, Math.random() < 0.7 ? oldTrack.cat : null);
+            if (!file) { if (!quiet) setStatus("No new files to swap!"); return false; }
+            if (!quiet) setStatus(`Swapping in ${file.name}...`);
+
+            const buffer = await decodeFile(file);
+            if (!buffer || mixId !== currentMixId || !isPlaying) return false;
+            const idx = activeTracks.indexOf(oldTrack);
+            if (idx === -1) return false;
+
+            const opts = Object.assign(
+                { baseVol: oldTrack.baseVol, basePan: oldTrack.basePan, speed: isSynced(oldTrack) ? 1 : oldTrack.speed },
+                quiet ? newLayerOpts(false) : {});
+            const t = createTrack(file, buffer, opts);
+            const when = t.start(fade, 0);
+            oldTrack.fadeOut(fade, when);
+            activeTracks[idx] = t;
+            syncTrackRows();
+            if (!quiet) setStatus(`Playing ${activeTracks.length} layers`);
+            return true;
+        }
+
+        async function addLayer(fade, quiet = false) {
+            const mixId = currentMixId;
+            const file = drawFitting(new Set(activeTracks.map(t => fileKey(t.file))), countCats(activeTracks));
+            if (!file) { if (!quiet) setStatus("Nothing left that fits - every file is playing or its folder is full"); return false; }
+
+            const buffer = await decodeFile(file);
+            if (!buffer || mixId !== currentMixId || !isPlaying) return false;
+
+            const t = createTrack(file, buffer, newLayerOpts(true));
+            t.start(fade, 0);
+            activeTracks.push(t);
+            syncTrackRows();
+            if (!quiet) setStatus(`Playing ${activeTracks.length} layers`);
+            return true;
+        }
+
+        function removeTrack(track, fade) {
+            const idx = activeTracks.indexOf(track);
+            if (idx === -1) return;
+            activeTracks.splice(idx, 1);
+            track.fadeOut(fade);
+            syncTrackRows();
+        }
+
+        function manualFade() { return isAmbientMode ? ambientFadeTime() : 0.4; }
+
+        function addLayerManual() {
+            if (!isPlaying) return setStatus("Start playing first!");
+            addLayer(manualFade());
+        }
+
+        function resliceTrack(track, fade) {
+            const slice = makeSlice(track);
+            if (!slice) return setStatus(`${track.file.name} is too short to slice`);
+            track.slice = slice;
+            track.relaunch(fade);
+        }
+
+        // ---------- ambient drift ----------
+        // Most of the time the longest-playing layer is the one that leaves, so sounds pass through like a stream.
+        function pickLeaving(list) {
+            if (Math.random() < 0.7) return list.reduce((a, b) => (a.bornAt <= b.bornAt ? a : b));
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        async function ambientStep() {
+            const n = activeTracks.length, counts = countCats(activeTracks);
+            const maxLayers = Math.min(Math.max(AMBIENT.maxLayers, missingForMins({})), allFiles.length);
+            const free = activeTracks.filter(t => !t.held);
+            const removable = free.filter(t => (counts[t.cat] || 0) > ruleFor(t.cat).min);
+            const canAdd = n < maxLayers && Object.keys(catFiles).some(c => hasRoom(c, counts));
+            const fade = ambientFadeTime();
+            const r = Math.random();
+
+            // a folder over its max (roles changed mid-play) gets thinned out first
+            const overfull = free.filter(t => counts[t.cat] > ruleFor(t.cat).max);
+            if (overfull.length) {
+                const t = pickLeaving(overfull);
+                return n > AMBIENT.minLayers ? removeTrack(t, fade) : replaceTrack(t, fade, true);
+            }
+            if ((n < AMBIENT.minLayers || missingForMins(counts) > 0) && canAdd) return addLayer(fade, true);
+            if (r < 0.2 && canAdd) return addLayer(fade, true);
+            if (r < 0.4 && removable.length && n > AMBIENT.minLayers) return removeTrack(pickLeaving(removable), fade);
+            if (r < 0.55 && sliceMode && free.length) {
+                // same sound, different moment of it
+                const t = free[Math.floor(Math.random() * free.length)];
+                t.slice = makeSlice(t) || t.slice;
+                return t.relaunch(fade);
+            }
+            if (free.length) return replaceTrack(pickLeaving(free), fade, true);
+        }
+
+        function scheduleAmbient() {
+            clearTimeout(ambientTimer);
+            nextDriftAt = 0;
+            $('drift-next').innerText = '';
+            if (!isPlaying || !isAmbientMode) return;
+
+            const waitMs = parseFloat($('sl-density').value) * rand(0.7, 1.3) * 1000;
+            nextDriftAt = performance.now() + waitMs;
+            const mixId = currentMixId;
+            ambientTimer = setTimeout(async () => {
+                if (mixId !== currentMixId) return;
+                nextDriftAt = 0;
+                await ambientStep();
+                if (mixId === currentMixId) scheduleAmbient();
+            }, waitMs);
+        }
+
+        // ---------- waveform strip ----------
+        // Where in the original file the playhead is, as 0..1.
+        function playheadFraction(t) {
+            if (!t.playBuffer) return 0;
+            const dur = t.buffer.duration, pos = t.position();
+            let fileTime;
+            if (t.slice) fileTime = t.slice.start + (t.reverse ? t.slice.len - pos : pos);
+            else { const bt = t.loopStart + pos; fileTime = t.reverse ? dur - bt : bt; }
+            return clamp(fileTime / dur, 0, 1);
+        }
+
+        function renderStripBg(t, dpr) {
+            const cv = document.createElement('canvas');
+            cv.width = STRIP_W * dpr;
+            cv.height = STRIP_H * dpr;
+            const g = cv.getContext('2d');
+            g.fillStyle = '#fff';
+            g.fillRect(0, 0, cv.width, cv.height);
+            const dur = t.buffer.duration, region = t.previewSlice || t.slice;
+            if (region) {
+                g.fillStyle = t.previewSlice ? '#ffe680' : '#ffcc00';
+                g.fillRect(region.start / dur * cv.width, 0, region.len / dur * cv.width, cv.height);
+            }
+            g.fillStyle = '#000';
+            const bw = cv.width / t.peaks.length;
+            for (let i = 0; i < t.peaks.length; i++) {
+                const h = Math.max(dpr, t.peaks[i] * (cv.height - 6 * dpr));
+                g.fillRect(i * bw, (cv.height - h) / 2, Math.max(dpr * 0.6, bw - dpr * 0.4), h);
+            }
+            return cv;
+        }
+
+        function drawStrip(t) {
+            const c = t.stripEl;
+            if (!c || !t.buffer) return;
+            const dpr = window.devicePixelRatio || 1;
+            if (c.width !== STRIP_W * dpr) { c.width = STRIP_W * dpr; c.height = STRIP_H * dpr; t.stripDirty = true; }
+            if (t.stripDirty || !t.stripBg) { t.stripBg = renderStripBg(t, dpr); t.stripDirty = false; }
+            const g = c.getContext('2d');
+            g.drawImage(t.stripBg, 0, 0);
+            g.fillStyle = '#ff0000';
+            g.fillRect(Math.round(playheadFraction(t) * c.width) - dpr, 0, 2 * dpr, c.height);
+        }
+
+        function bindStrip(t, strip) {
+            let dragging = false;
+            const fileTimeAt = (e) => {
+                const r = strip.getBoundingClientRect();
+                return clamp((e.clientX - r.left) / r.width, 0, 1) * t.buffer.duration;
+            };
+            strip.addEventListener('pointerdown', (e) => {
+                if (t.dead) return;
+                dragging = true;
+                strip.setPointerCapture(e.pointerId);
+                t.previewSlice = sliceAt(t, fileTimeAt(e));
+                t.stripDirty = true;
+            });
+            strip.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                t.previewSlice = sliceAt(t, fileTimeAt(e));
+                t.stripDirty = true;
+            });
+            strip.addEventListener('pointerup', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                const s = sliceAt(t, fileTimeAt(e));
+                t.previewSlice = null;
+                t.stripDirty = true;
+                if (!s) return setStatus(`${t.file.name} is too short to slice`);
+                t.slice = s;
+                t.loopsUntilHop = 0;
+                t.relaunch(isAmbientMode ? 1.5 : 0.05, true);
+            });
+            strip.addEventListener('pointercancel', () => {
+                dragging = false;
+                t.previewSlice = null;
+                t.stripDirty = true;
+            });
+        }
+
+        // ---------- UI ----------
+        function startProgressLoop() {
+            cancelAnimationFrame(progressRaf);
+            let lastDriftText = '';
+            const tick = () => {
+                if (!isPlaying) return;
+                activeTracks.forEach(drawStrip);
+                const txt = nextDriftAt ? `next drift in ${Math.max(0, Math.ceil((nextDriftAt - performance.now()) / 1000))}s` : '';
+                if (txt !== lastDriftText) { $('drift-next').innerText = txt; lastDriftText = txt; }
+                progressRaf = requestAnimationFrame(tick);
+            };
+            tick();
+        }
+
+        function buildRow(track) {
+            const row = document.createElement('div');
+            row.className = 'track';
+            row.innerHTML = `
+                <div class="track-btns">
+                    <button class="btn-orange btn-small" data-act="swap" title="Swap for another file">🔄</button>
+                    <button class="btn-grey btn-small" data-act="hold" title="Hold: drift, hop and NEXT MIX won't touch this layer">📌</button>
+                    <button class="btn-grey btn-small" data-act="slice" title="Loop a new random slice of this file">✂</button>
+                    <button class="btn-grey btn-small" data-act="reverse" title="Play backwards">⇆</button>
+                    <button class="btn-grey btn-small" data-act="remove" title="Fade this layer out">✕</button>
+                </div>
+                <div class="track-name">
+                    <span class="track-num"></span> <span class="track-title"></span>
+                    <div class="track-meta"></div>
+                </div>
+
+                <div class="slider-container">
+                    <label>Vol: <span data-val="vol"></span></label>
+                    <input type="range" data-ctl="vol" min="0" max="1" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Speed: <span data-val="spd"></span></label>
+                    <input type="range" data-ctl="spd" min="0.5" max="2.0" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Pan: <span data-val="pan"></span></label>
+                    <input type="range" data-ctl="pan" min="-1" max="1" step="0.01">
+                </div>
+                <label class="bpm-box">BPM <input type="number" data-ctl="bpm" min="40" max="300" step="0.1" placeholder="?"></label>
+
+                <canvas class="strip" title="Click or drag to move the loop slice here"></canvas>
+            `;
+            row.querySelector('.track-title').textContent = track.file.name;
+            row.querySelector('.track-name').title = fileKey(track.file);
+            track.row = row;
+            track.stripEl = row.querySelector('canvas.strip');
+            bindStrip(track, track.stripEl);
+            updateRowControls(track);
+
+            const q = sel => row.querySelector(sel);
+            q('[data-act="swap"]').addEventListener('click', (e) => {
+                e.currentTarget.disabled = true;
+                replaceTrack(track, manualFade());
+            });
+            q('[data-act="hold"]').addEventListener('click', () => {
+                track.held = !track.held;
+                updateRowControls(track);
+            });
+            q('[data-act="slice"]').addEventListener('click', () => resliceTrack(track, isAmbientMode ? 3 : 0.1));
+            q('[data-act="reverse"]').addEventListener('click', () => {
+                track.reverse = !track.reverse;
+                track.relaunch(isAmbientMode ? 3 : 0.1);
+            });
+            q('[data-act="remove"]').addEventListener('click', () => removeTrack(track, manualFade()));
+            q('[data-ctl="vol"]').addEventListener('input', (e) => {
+                track.baseVol = parseFloat(e.target.value);
+                q('[data-val="vol"]').innerText = track.baseVol.toFixed(2);
+                track.applyParams();
+            });
+            q('[data-ctl="spd"]').addEventListener('input', (e) => {
+                track.setSpeed(parseFloat(e.target.value));
+                q('[data-val="spd"]').innerText = track.speed.toFixed(2);
+            });
+            q('[data-ctl="pan"]').addEventListener('input', (e) => {
+                track.basePan = parseFloat(e.target.value);
+                q('[data-val="pan"]').innerText = track.basePan.toFixed(2);
+                track.applyParams();
+            });
+            q('[data-ctl="bpm"]').addEventListener('change', (e) => {
+                const v = parseFloat(e.target.value), key = fileKey(track.file);
+                if (v >= 40 && v <= 300) { track.bpm = v; bpmMemory[key] = v; }
+                else { track.bpm = 0; delete bpmMemory[key]; e.target.value = ''; }
+                store.set('bpm', bpmMemory);
+                if (syncOn) {
+                    if (track.slice && track.bpm) track.slice = makeSlice(track) || track.slice;
+                    track.relaunch(0.05);
+                }
+                updateRowControls(track);
+            });
+            return row;
+        }
+
+        function updateRowControls(t) {
+            const r = t.row;
+            if (!r) return;
+            const synced = isSynced(t);
+            r.classList.toggle('held', t.held);
+            r.querySelector('[data-act="reverse"]').classList.toggle('btn-on', t.reverse);
+            r.querySelector('[data-act="slice"]').classList.toggle('btn-on', !!t.slice);
+            r.querySelector('[data-ctl="vol"]').value = t.baseVol;
+            r.querySelector('[data-ctl="spd"]').value = t.speed;
+            r.querySelector('[data-ctl="spd"]').disabled = synced;
+            r.querySelector('[data-ctl="pan"]').value = t.basePan;
+            r.querySelector('[data-val="vol"]').innerText = t.baseVol.toFixed(2);
+            r.querySelector('[data-val="spd"]').innerText = t.speed.toFixed(2) + (synced ? ' sync' : '');
+            r.querySelector('[data-val="pan"]').innerText = t.basePan.toFixed(2);
+            const bpmInput = r.querySelector('[data-ctl="bpm"]');
+            if (document.activeElement !== bpmInput) bpmInput.value = t.bpm || '';
+
+            const meta = [];
+            if (t.cat !== LOOSE) meta.push(t.cat);
+            if (t.slice) meta.push(t.slice.bars ? `slice ${t.slice.bars} bar${t.slice.bars > 1 ? 's' : ''}` : `slice ${t.slice.len.toFixed(1)}s`);
+            if (t.reverse) meta.push('reversed');
+            if (syncOn && !t.bpm) meta.push('free (no BPM)');
+            r.querySelector('.track-meta').textContent = meta.join(' · ');
+            t.stripDirty = true;
+        }
+
+        // Only touches rows that changed, so a slider you're dragging isn't rebuilt under your mouse.
+        function syncTrackRows() {
+            const container = $('tracks-container');
+            const wanted = new Set(activeTracks.map(t => t.row).filter(Boolean));
+            [...container.children].forEach(el => { if (!wanted.has(el)) el.remove(); });
+            activeTracks.forEach((t, i) => {
+                if (!t.row) buildRow(t);
+                if (container.children[i] !== t.row) container.insertBefore(t.row, container.children[i] || null);
+                t.row.querySelector('.track-num').innerText = `${i + 1}.`;
+            });
+            updateLayerTrim();
         }
 
         function randomizeVolumes() {
-            activeTracks.forEach((t, i) => {
-                t.baseVol = (Math.random() * (1.0 - 0.3) + 0.3);
-                if(!isAmbientMode) t.gain.gain.value = t.baseVol;
+            activeTracks.forEach(t => {
+                t.baseVol = rand(0.3, 1.0);
+                t.applyParams(0.3);
+                updateRowControls(t);
             });
-            renderTracksUI();
         }
 
         function resetKnobs() {
-            activeTracks.forEach((t, i) => {
-                t.speed = 1.0;
+            activeTracks.forEach(t => {
+                if (!isSynced(t)) t.setSpeed(1.0);
                 t.basePan = 0.0;
-                if(t.sourceNode) t.sourceNode.playbackRate.value = 1.0;
-                if(!isAmbientMode) t.panner.pan.value = 0.0;
+                t.applyParams(0.1);
+                updateRowControls(t);
             });
-            renderTracksUI();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') return toggleDrawer(false);
+            const tag = e.target.tagName;
+            if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type !== 'range')) return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const k = e.key.toLowerCase();
+            if (k === 'p') toggleMix();
+            else if (k === 'n') startNewMix();
+            else if (k === 'm') toggleMode();
+        });
+
+        // ---------- snapshots ----------
+        function saveSnapshot() {
+            if (!activeTracks.length) return setStatus("Nothing playing to save");
+            const name = $('snap-name').value.trim() || activeTracks.map(baseName).join(' + ').slice(0, 70);
+            snapshots.unshift({
+                name, savedAt: Date.now(),
+                ambient: isAmbientMode, slices: sliceMode, hop: hopEvery, sync: syncOn, bpm: masterBpm(),
+                fx: Object.fromEntries(['master', 'reverb', 'delay', 'drive', 'density'].map(id => [id, parseFloat($(`sl-${id}`).value)])),
+                layers: activeTracks.map(t => ({
+                    key: fileKey(t.file), name: t.file.name, vol: t.baseVol, pan: t.basePan, speed: t.speed,
+                    reverse: t.reverse, slice: t.slice, held: t.held,
+                })),
+            });
+            store.set('snapshots', snapshots);
+            $('snap-name').value = '';
+            renderSnapshots();
+            setStatus(`Saved snapshot "${name}"`);
+        }
+
+        function loadSnapshot(s) {
+            if (!ensureAudio()) return;
+            Object.entries(s.fx || {}).forEach(([id, v]) => {
+                const sl = $(`sl-${id}`);
+                if (!sl) return;
+                sl.value = v;
+                sl.dispatchEvent(new Event('input'));
+            });
+            if (!!s.ambient !== isAmbientMode) toggleMode();
+            setLoopMode(!!s.slices);
+            setHop(s.hop || 0);
+            if (s.bpm) { $('in-bpm').value = s.bpm; lastMasterBpm = s.bpm; }
+            if (!!s.sync !== syncOn) { syncOn = !s.sync; toggleSync(); }
+
+            const byKey = new Map(allFiles.map(f => [fileKey(f), f]));
+            const byName = new Map(allFiles.map(f => [f.name, f]));
+            const plan = [];
+            let missing = 0;
+            (s.layers || []).forEach(l => {
+                const file = byKey.get(l.key) || byName.get(l.name);
+                if (!file) { missing++; return; }
+                plan.push({ file, opts: { baseVol: l.vol, basePan: l.pan, speed: l.speed, reverse: l.reverse, slice: l.slice || null, held: l.held } });
+            });
+            if (!plan.length) return setStatus(`None of "${s.name}"'s files are in the loaded folder`);
+            startMix(isPlaying, plan).then(() => {
+                setStatus(`Loaded "${s.name}"` + (missing ? ` · ${missing} file(s) not in this folder` : ''));
+            });
+        }
+
+        function renderSnapshots() {
+            const list = $('snap-list');
+            list.innerHTML = '';
+            if (!snapshots.length) {
+                list.innerHTML = '<div class="empty-note">No snapshots yet. When a combination sounds good, hit 💾 Save.</div>';
+                return;
+            }
+            snapshots.forEach(s => {
+                const row = document.createElement('div');
+                row.className = 'snap-row';
+                row.innerHTML = `
+                    <span class="snap-name"></span>
+                    <span class="snap-info"></span>
+                    <button class="btn-small" data-act="load">▶ Load</button>
+                    <button class="btn-grey btn-small" data-act="del">✕</button>
+                `;
+                row.querySelector('.snap-name').textContent = s.name;
+                row.querySelector('.snap-name').title = (s.layers || []).map(l => l.name).join('\n');
+                row.querySelector('.snap-info').textContent =
+                    `${(s.layers || []).length} layers · ${s.ambient ? 'ambient' : 'standard'} · ${new Date(s.savedAt).toLocaleDateString()}`;
+                row.querySelector('[data-act="load"]').addEventListener('click', () => loadSnapshot(s));
+                const del = row.querySelector('[data-act="del"]');
+                del.addEventListener('click', () => {
+                    if (del.dataset.armed) {
+                        snapshots.splice(snapshots.indexOf(s), 1);
+                        store.set('snapshots', snapshots);
+                        renderSnapshots();
+                        return;
+                    }
+                    del.dataset.armed = '1';
+                    del.innerText = 'SURE?';
+                    setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.innerText = '✕'; } }, 3000);
+                });
+                list.appendChild(row);
+            });
+        }
+
+        function exportSnapshots() {
+            if (!snapshots.length) return setStatus("No snapshots to export yet");
+            const blob = new Blob([JSON.stringify(snapshots, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, `AlHut_snapshots_${new Date().toISOString().slice(0, 10)}.json`);
+        }
+
+        $('snap-import').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const data = JSON.parse(await file.text());
+                const incoming = (Array.isArray(data) ? data : [data]).filter(s => s && Array.isArray(s.layers));
+                if (!incoming.length) throw new Error('no snapshots');
+                const seen = new Set(snapshots.map(s => s.name + s.savedAt));
+                const added = incoming.filter(s => !seen.has(s.name + s.savedAt));
+                snapshots = [...added, ...snapshots];
+                store.set('snapshots', snapshots);
+                renderSnapshots();
+                setStatus(`Imported ${added.length} snapshot(s)`);
+            } catch (err) {
+                setStatus("That file isn't a snapshot export");
+            }
+        });
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);   // revoking immediately can cancel the download in Firefox/Safari
+        }
+
+        // ---------- recording ----------
+        function updateRecLabel() {
+            if (!recSession) return;
+            const s = Math.floor((Date.now() - recSession.startedAt) / 1000);
+            const hh = Math.floor(s / 3600), mm = Math.floor(s / 60) % 60, ss = s % 60;
+            const time = (hh ? hh + ':' : '') + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+            $('btn-record').innerText = `■ STOP REC ${time}`;
         }
 
         function toggleRecord() {
-            if(!isPlaying) return setStatus("Start playing first!");
-            
-            const btn = document.getElementById('btn-record');
-            if(!isRecording) {
+            const btn = $('btn-record');
+            if (!recSession) {
+                if (!isPlaying) return setStatus("Start playing first!");
                 let names = activeTracks.map(t => {
-                    let n = t.file.name.replace(/\.[^/.]+$/, ""); 
-                    n = n.replace(/[^a-zA-Z0-9]/g, ''); 
-                    return n.substring(0, 10); 
-                });
-                currentRecordTrackNames = names.join("_");
-                if (!currentRecordTrackNames) currentRecordTrackNames = "mix";
+                    let n = baseName(t.file);
+                    n = n.replace(/[^\p{L}\p{N}]/gu, '');   // keeps Arabic and other scripts, drops punctuation
+                    return n.substring(0, 10);
+                }).filter(Boolean);
 
-                recLength = 0;
-                recBuffersL = [];
-                recBuffersR = [];
-                isRecording = true;
-                btn.innerText = "■ STOP RECORDING";
+                recSession = { id: ++recSeq, names: names.join("_") || "mix", chunks: [], blobs: [], frames: 0, startedAt: Date.now() };
+                recSessions[recSession.id] = recSession;
+                if (recTap) recTap.port.postMessage({ cmd: 'start', id: recSession.id });
+                updateRecLabel();
+                recTimer = setInterval(updateRecLabel, 500);
                 btn.style.background = "var(--warning)";
                 setStatus("🔴 Recording Live Mix to WAV...");
             } else {
-                isRecording = false;
+                const sess = recSession;
+                recSession = null;
+                clearInterval(recTimer);
                 btn.innerText = "🔴 RECORD (WAV)";
                 btn.style.background = "var(--danger)";
                 setStatus("Processing WAV file. Please wait...");
-                setTimeout(exportWAV, 50); 
+                // the worklet sends its last few milliseconds, then 'done' triggers the export
+                if (recTap) recTap.port.postMessage({ cmd: 'stop' });
+                else setTimeout(() => { delete recSessions[sess.id]; exportWAV(sess); }, 50);
             }
         }
 
-        function exportWAV() {
-            if (recLength === 0) {
+        function exportWAV(sess) {
+            if (sess.frames === 0) {
                 setStatus("Recording was empty.");
                 return;
             }
-            let bufferL = mergeBuffers(recBuffersL, recLength);
-            let bufferR = mergeBuffers(recBuffersR, recLength);
-            let interleaved = interleave(bufferL, bufferR);
-            let dataview = encodeWAV(interleaved);
-            
-            let audioBlob = new Blob([dataview], { type: 'audio/wav' });
-            let url = URL.createObjectURL(audioBlob);
-            
-            let a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `AlHut_${currentRecordTrackNames}_${Date.now()}.wav`; 
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
+            const info = infoChunk();
+            const blob = new Blob([wavHeader(sess.frames * 4, info.byteLength), ...sess.blobs, ...sess.chunks, info], { type: 'audio/wav' });
+            sess.blobs = sess.chunks = [];
+            downloadBlob(blob, `AlHut_${sess.names}_${Date.now()}.wav`);
             setStatus("WAV Recording saved!");
-            recBuffersL = [];
-            recBuffersR = [];
-        }
-
-        function mergeBuffers(recBuffers, recLength) {
-            let result = new Float32Array(recLength);
-            let offset = 0;
-            for (let i = 0; i < recBuffers.length; i++) {
-                result.set(recBuffers[i], offset);
-                offset += recBuffers[i].length;
-            }
-            return result;
-        }
-
-        function interleave(inputL, inputR) {
-            let length = inputL.length + inputR.length;
-            let result = new Float32Array(length);
-            let index = 0, inputIndex = 0;
-            while (index < length) {
-                result[index++] = inputL[inputIndex];
-                result[index++] = inputR[inputIndex];
-                inputIndex++;
-            }
-            return result;
         }
 
         function writeString(view, offset, string) {
@@ -679,24 +1960,11 @@
             }
         }
 
-        function encodeWAV(samples) {
-            const artistStr = "Al Hut mixer abo kalleb\0"; 
-            const padArtist = artistStr.length % 2 === 1 ? "\0" : "";
-            const finalArtistStr = artistStr + padArtist;
-            
-            const softwareStr = "Al Hut mixer abo kalleb\0"; 
-            const padSoftware = softwareStr.length % 2 === 1 ? "\0" : "";
-            const finalSoftwareStr = softwareStr + padSoftware;
-
-            const listSize = 4 + (8 + finalArtistStr.length) + (8 + finalSoftwareStr.length);
-            const totalDataBytes = samples.length * 2;
-            const riffSize = 36 + totalDataBytes + 8 + listSize;
-
-            let buffer = new ArrayBuffer(8 + riffSize);
-            let view = new DataView(buffer);
-            
+        // 16-bit stereo PCM header; the RIFF size also covers the LIST/INFO chunk that goes after the audio.
+        function wavHeader(dataBytes, infoBytes) {
+            const view = new DataView(new ArrayBuffer(44));
             writeString(view, 0, 'RIFF');
-            view.setUint32(4, riffSize, true);
+            view.setUint32(4, 36 + dataBytes + infoBytes, true);
             writeString(view, 8, 'WAVE');
             writeString(view, 12, 'fmt ');
             view.setUint32(16, 16, true);
@@ -707,28 +1975,34 @@
             view.setUint16(32, 4, true);
             view.setUint16(34, 16, true);
             writeString(view, 36, 'data');
-            view.setUint32(40, totalDataBytes, true);
-
-            let offset = 44;
-            for (let i = 0; i < samples.length; i++, offset += 2) {
-                let s = Math.max(-1, Math.min(1, samples[i]));
-                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-            }
-            
-            writeString(view, offset, 'LIST'); offset += 4;
-            view.setUint32(offset, listSize, true); offset += 4;
-            writeString(view, offset, 'INFO'); offset += 4;
-            
-            writeString(view, offset, 'IART'); offset += 4; 
-            view.setUint32(offset, finalArtistStr.length, true); offset += 4;
-            writeString(view, offset, finalArtistStr); offset += finalArtistStr.length;
-            
-            writeString(view, offset, 'ISFT'); offset += 4; 
-            view.setUint32(offset, finalSoftwareStr.length, true); offset += 4;
-            writeString(view, offset, finalSoftwareStr); offset += finalSoftwareStr.length;
-
-            return view;
+            view.setUint32(40, dataBytes, true);
+            return view.buffer;
         }
+
+        function infoChunk() {
+            const field = (id, text) => {
+                let s = text + '\0';
+                if (s.length % 2 === 1) s += '\0';
+                return [id, s];
+            };
+            const fields = [field('IART', 'Al Hut mixer abo kalleb'), field('ISFT', 'Al Hut mixer abo kalleb')];
+            const listSize = 4 + fields.reduce((n, [, s]) => n + 8 + s.length, 0);
+            const view = new DataView(new ArrayBuffer(8 + listSize));
+            writeString(view, 0, 'LIST');
+            view.setUint32(4, listSize, true);
+            writeString(view, 8, 'INFO');
+            let offset = 12;
+            fields.forEach(([id, s]) => {
+                writeString(view, offset, id);
+                view.setUint32(offset + 4, s.length, true);
+                writeString(view, offset + 8, s);
+                offset += 8 + s.length;
+            });
+            return view.buffer;
+        }
+
+        renderRoles();
+        renderSnapshots();
     </script>
 </body>
 </html>
