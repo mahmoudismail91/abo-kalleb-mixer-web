@@ -178,7 +178,11 @@
 </head>
 <body>
 
-    <a href="https://alhutmusic.com/" target="_top" class="back-btn" title="Back to alhutmusic.com" aria-label="Back to alhutmusic.com">←</a>
+    <a href="/" class="back-btn" title="Back to main" aria-label="Back to main" hidden>←</a>
+    <script>
+        // Only on the home site; on itch.io, GitHub or a local copy there is no "main" to go back to.
+        if (/(^|\.)alhutmusic\.com$/.test(location.hostname)) document.querySelector('.back-btn').hidden = false;
+    </script>
 
     <div id="drop-overlay" hidden>Drop audio files or folders</div>
 
