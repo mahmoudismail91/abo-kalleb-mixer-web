@@ -140,6 +140,14 @@
             position: fixed; top: 14px; right: 14px; z-index: 30;
             font-size: 22px; padding: 6px 13px; line-height: 1; background: #fff;
         }
+        /* back to the main site, mirrors the settings button on the left */
+        .back-btn {
+            position: fixed; top: 14px; left: 14px; z-index: 30;
+            border: 2px solid var(--border-color); box-shadow: 3px 3px 0px var(--border-color);
+            font-size: 22px; font-weight: bold; padding: 6px 13px; line-height: 1;
+            background: #fff; color: #000; text-decoration: none; transition: 0.1s;
+        }
+        .back-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); background: var(--accent); }
         #drawer {
             position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 100%); box-sizing: border-box;
             background: var(--panel); border-left: 3px solid var(--border-color); box-shadow: -6px 0 0 var(--border-color);
@@ -164,10 +172,13 @@
             body { padding: 10px; }
             .track-name { flex-basis: 100%; order: -1; }
             .menu-btn { top: 8px; right: 8px; }
+            .back-btn { top: 8px; left: 8px; }
         }
     </style>
 </head>
 <body>
+
+    <a href="https://alhutmusic.com/" target="_top" class="back-btn" title="Back to alhutmusic.com" aria-label="Back to alhutmusic.com">←</a>
 
     <div id="drop-overlay" hidden>Drop audio files or folders</div>
 
