@@ -236,8 +236,9 @@ document.addEventListener('keydown', (e) => {
     const tag = e.target.tagName;
     if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type !== 'range')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (tag === 'INPUT' && e.code.startsWith('Arrow')) return;   // arrows still move a focused slider
     const i = KEYS.indexOf(e.code);
-    const ours = i !== -1 || ['Space', 'BracketLeft', 'BracketRight'].includes(e.code);
+    const ours = i !== -1 || ['Space', 'BracketLeft', 'BracketRight', 'ArrowLeft', 'ArrowRight'].includes(e.code);
     if (!ours) return;
     e.preventDefault();   // keeps Space from pressing whichever button has focus
     if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
@@ -245,6 +246,8 @@ document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') return stopAll();
     if (e.code === 'BracketLeft') return stepBank(-1);
     if (e.code === 'BracketRight') return stepBank(1);
+    if (e.code === 'ArrowLeft') return stepRegion(-1);
+    if (e.code === 'ArrowRight') return stepRegion(1);
     if (e.shiftKey) return selectPad(i);
     heldKeys.set(e.code, padAt(i));
     trigger(i);
@@ -402,32 +405,44 @@ function drawWave() {
 }
 window.addEventListener('resize', drawWave);
 
-// Dragging on the waveform moves whichever edge (start or end) is nearer.
+// Drag an edge (red line) to change where the sound starts or ends; drag inside the yellow part to move
+// the whole part along the file without changing its length. Outside it, the nearer edge jumps to where you click.
 (function bindWave() {
-    const cv = $('ed-wave');
-    let edge = null;
-    const timeAt = (e) => {
-        const r = cv.getBoundingClientRect(), pad = padAt(selected);
-        return clamp((e.clientX - r.left) / r.width, 0, 1) * pad.buffer.duration;
+    const cv = $('ed-wave'), GRAB_PX = 8;
+    let drag = null;
+    const fracAt = (e) => { const r = cv.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1); };
+    // what a press at this point grabs: 'start', 'end' or 'move'
+    const hitTest = (e, pad) => {
+        const r = cv.getBoundingClientRect(), dur = pad.buffer.duration, x = e.clientX - r.left;
+        const xs = pad.start / dur * r.width, xe = pad.end / dur * r.width;
+        if (Math.abs(x - xs) <= GRAB_PX && Math.abs(x - xs) <= Math.abs(x - xe)) return 'start';
+        if (Math.abs(x - xe) <= GRAB_PX) return 'end';
+        if (x > xs && x < xe) return 'move';
+        return Math.abs(x - xs) <= Math.abs(x - xe) ? 'start' : 'end';
     };
     const apply = (e) => {
-        const pad = padAt(selected), t = timeAt(e), minLen = 0.01;
-        if (edge === 'start') pad.start = Math.min(t, pad.end - minLen);
-        else pad.end = Math.max(t, pad.start + minLen);
+        const pad = padAt(selected), t = fracAt(e) * pad.buffer.duration, minLen = 0.01;
+        if (drag.what === 'start') pad.start = Math.min(t, pad.end - minLen);
+        else if (drag.what === 'end') pad.end = Math.max(t, pad.start + minLen);
+        else moveRegion(pad, t - drag.grabOffset - pad.start);
         drawWave();
     };
     cv.addEventListener('pointerdown', (e) => {
         const pad = padAt(selected);
         if (!pad || !pad.buffer) return;
-        const t = timeAt(e);
-        edge = Math.abs(t - pad.start) <= Math.abs(t - pad.end) ? 'start' : 'end';
+        const what = hitTest(e, pad);
+        drag = { what, grabOffset: fracAt(e) * pad.buffer.duration - pad.start };
         cv.setPointerCapture(e.pointerId);
-        apply(e);
+        if (what !== 'move') apply(e);
     });
-    cv.addEventListener('pointermove', (e) => { if (edge) apply(e); });
+    cv.addEventListener('pointermove', (e) => {
+        if (drag) return apply(e);
+        const pad = padAt(selected);
+        cv.style.cursor = pad && pad.buffer ? (hitTest(e, pad) === 'move' ? 'grab' : 'ew-resize') : 'default';
+    });
     const done = () => {
-        if (!edge) return;
-        edge = null;
+        if (!drag) return;
+        drag = null;
         const pad = padAt(selected);
         rebuildHit(pad);
         refreshPadEl(pad);
@@ -436,6 +451,26 @@ window.addEventListener('resize', drawWave);
     cv.addEventListener('pointerup', done);
     cv.addEventListener('pointercancel', done);
 })();
+
+// Slides the part by `by` seconds, keeping its length and stopping at the ends of the file.
+function moveRegion(pad, by) {
+    const len = pad.end - pad.start;
+    pad.start = clamp(pad.start + by, 0, pad.buffer.duration - len);
+    pad.end = pad.start + len;
+}
+
+// Steps the selected part one whole length back or forward through the file and plays it,
+// so you can walk through a recording piece by piece and keep the parts you like.
+function stepRegion(dir) {
+    const pad = padAt(selected);
+    if (!pad || !pad.buffer) return;
+    moveRegion(pad, dir * (pad.end - pad.start));
+    release(pad, 0.01);
+    rebuildHit(pad);
+    renderEditor();
+    refreshPadEl(pad);
+    trigger(selected);
+}
 
 // Every edit applies to the selected pad and rebuilds what it plays when needed.
 function editPad(fn, rebuild = false) {

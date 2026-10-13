@@ -97,16 +97,18 @@
                 <div id="status-label">Load a folder of short sounds...</div>
             </div>
             <div class="pads" id="pads"></div>
-            <div class="hint">Play with your keyboard: 1-0 · Q-P · A-L · Z-M · Shift+key selects without playing · [ ] change bank · Space stops everything · drop a file on a pad to put it there</div>
+            <div class="hint">Play with your keyboard: 1-0 · Q-P · A-L · Z-M · Shift+key selects without playing · ← → walk the selected pad through its file · [ ] change bank · Space stops everything · drop a file on a pad to put it there</div>
         </div>
 
         <div class="frame" id="editor" hidden>
             <div class="editor-head">
                 <h3 id="ed-key">Pad</h3>
                 <span class="editor-name" id="ed-name"></span>
+                <button class="btn-grey btn-small" onclick="stepRegion(-1)" title="Move the part one length back (←)">◀</button>
                 <button class="btn-small" onclick="previewSelected()">▶ Play</button>
+                <button class="btn-grey btn-small" onclick="stepRegion(1)" title="Move the part one length forward (→)">▶▶</button>
             </div>
-            <canvas id="ed-wave" title="Drag to set where the sound starts and ends"></canvas>
+            <canvas id="ed-wave" title="Drag the red edges to trim, drag the yellow part to move it"></canvas>
             <div class="ed-controls">
                 <div class="seg" id="ed-mode">
                     <button data-mode="shot" title="Plays to the end every time you hit it">One-shot</button>
@@ -181,7 +183,7 @@
             <summary>❓ How it works</summary>
             <p>Load a folder of short sounds (or drop one anywhere). Each subfolder becomes a <b>bank</b> of up to 36 pads, laid out like your keyboard. Hit the keys to play. Everything stays on your computer; nothing is uploaded.</p>
             <ul>
-                <li>Click a pad (or Shift+its key) to edit it: drag on the waveform to set where it starts and ends, pick <b>One-shot</b>, <b>Hold</b> (plays while the key is down) or <b>Loop</b> (hit once to start, again to stop), and set volume, pitch, pan and reverse.</li>
+                <li>Click a pad (or Shift+its key) to edit it: drag the red edges on the waveform to trim it, drag the yellow part to move it along the file (or step it with ← →), pick <b>One-shot</b>, <b>Hold</b> (plays while the key is down) or <b>Loop</b> (hit once to start, again to stop), and set volume, pitch, pan and reverse.</li>
                 <li><b>Choke</b> groups cut each other off: put an open and a closed hi-hat in the same group.</li>
                 <li><b>🎲 Re-roll</b> swaps a pad, or the whole bank, for other sounds from the same folder, so the archive keeps surprising you.</li>
                 <li><b>✂ Chop</b> cuts a longer sound into 4, 8 or 16 equal parts across the following pads.</li>
