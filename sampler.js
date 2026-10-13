@@ -103,6 +103,7 @@ function newPad(file, like = null) {
         start: 0, end: 0,
         mode: like ? like.mode : 'shot', vol: like ? like.vol : 0.8, pitch: like ? like.pitch : 0,
         pan: like ? like.pan : 0, reverse: like ? like.reverse : false, choke: like ? like.choke : 0,
+        seq: like ? like.seq || 0 : 0,   // drum machine state: 0 off, 1 pulse, 2 drift (see machine.js)
     };
 }
 
@@ -180,19 +181,26 @@ function trigger(i) {
 
     if (pad.mode === 'loop' && voices.some(v => v.pad === pad)) return release(pad);
     if (pad.mode !== 'shot') release(pad, 0.01);
-    if (pad.choke) voices.filter(v => v.pad !== pad && v.pad.choke === pad.choke).forEach(v => stopVoice(v, 0.012));
+    startVoice(pad, audioCtx.currentTime, { loop: pad.mode === 'loop' });
+    flashPad(i);
+}
+
+// Starts one voice of a pad at `when`. o: loop, gain (x pad vol), detune (semitones on top of the pad's pitch),
+// pan (added to the pad's pan), attack (s), dur (s, then it releases by itself).
+function startVoice(pad, when, o = {}) {
+    if (pad.choke) voices.filter(v => v.pad !== pad && v.pad.choke === pad.choke).forEach(v => stopVoice(v, 0.012, when));
     while (voices.length >= MAX_VOICES) stopVoice(voices[0], 0.01);
 
-    const now = audioCtx.currentTime;
     const src = audioCtx.createBufferSource();
     src.buffer = pad.hit;
-    src.loop = pad.mode === 'loop';
-    src.playbackRate.value = Math.pow(2, pad.pitch / 12);
+    src.loop = !!o.loop;
+    src.playbackRate.value = Math.pow(2, (pad.pitch + (o.detune || 0)) / 12);
+    const level = pad.vol * (o.gain ?? 1), attack = o.attack || 0.002;
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(pad.vol, now + 0.002);
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(level, when + attack);
     const p = audioCtx.createStereoPanner();
-    p.pan.value = pad.pan;
+    p.pan.value = clamp(pad.pan + (o.pan || 0), -1, 1);
     src.connect(g);
     g.connect(p);
     p.connect(master.input);
@@ -203,15 +211,20 @@ function trigger(i) {
         voices = voices.filter(x => x !== v);
         refreshPadEl(pad);
     };
-    src.start(now);
-    flashPad(i);
+    src.start(when);
+    if (o.dur) {
+        g.gain.setValueAtTime(level, when + Math.max(attack, o.dur));
+        g.gain.linearRampToValueAtTime(0, when + Math.max(attack, o.dur) + RELEASE);
+        src.stop(when + Math.max(attack, o.dur) + RELEASE + 0.01);
+    }
     refreshPadEl(pad);
+    return v;
 }
 
-function stopVoice(v, fade = RELEASE) {
+function stopVoice(v, fade = RELEASE, at = 0) {
     if (v.stopping) return;
     v.stopping = true;
-    const now = audioCtx.currentTime, gain = v.g.gain;
+    const now = Math.max(audioCtx.currentTime, at), gain = v.g.gain;
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(now);
     else { gain.cancelScheduledValues(now); gain.setValueAtTime(gain.value, now); }
     gain.linearRampToValueAtTime(0, now + fade);
@@ -225,6 +238,7 @@ function release(pad, fade = RELEASE) {
 }
 
 function stopAll() {
+    stopMachine();
     if (!audioCtx) return;
     [...voices].forEach(v => stopVoice(v, 0.05));
     heldKeys.clear();
@@ -238,12 +252,13 @@ document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (tag === 'INPUT' && e.code.startsWith('Arrow')) return;   // arrows still move a focused slider
     const i = KEYS.indexOf(e.code);
-    const ours = i !== -1 || ['Space', 'BracketLeft', 'BracketRight', 'ArrowLeft', 'ArrowRight'].includes(e.code);
+    const ours = i !== -1 || ['Space', 'Enter', 'BracketLeft', 'BracketRight', 'ArrowLeft', 'ArrowRight'].includes(e.code);
     if (!ours) return;
     e.preventDefault();   // keeps Space from pressing whichever button has focus
     if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
     if (e.repeat) return;
     if (e.code === 'Space') return stopAll();
+    if (e.code === 'Enter') return toggleMachine();
     if (e.code === 'BracketLeft') return stepBank(-1);
     if (e.code === 'BracketRight') return stepBank(1);
     if (e.code === 'ArrowLeft') return stepRegion(-1);
@@ -291,8 +306,14 @@ function renderPads() {
             const el = document.createElement('div');
             el.className = 'pad';
             el.dataset.i = i;
-            el.innerHTML = '<span class="pad-key"></span><span class="pad-mode"></span><canvas width="60" height="18"></canvas><span class="pad-name"></span>';
+            el.innerHTML = '<span class="pad-key"></span><span class="pad-mode"></span><canvas width="60" height="18"></canvas><span class="pad-name"></span>' +
+                '<span class="pad-seq" title="Drum machine: click for pulse, again for drift, again for off"></span>';
             el.querySelector('.pad-key').textContent = keyLabel(code);
+            el.querySelector('.pad-seq').addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                cycleSeq(i);
+            });
             el.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 selectPad(i);
@@ -328,6 +349,7 @@ function paintPad(i) {
     ['loop', 'gate'].forEach(m => el.classList.toggle('mode-' + m, !!(pad && pad.mode === m)));
     el.querySelector('.pad-name').textContent = pad ? baseName(pad.file) : 'empty';
     el.title = pad ? fileKey(pad.file) : 'Drop a sound here';
+    [1, 2].forEach(n => el.classList.toggle('seq-' + n, !!(pad && pad.seq === n)));
     el.querySelector('.pad-mode').textContent = pad ? { shot: '', gate: 'HOLD', loop: 'LOOP' }[pad.mode] + (pad.choke ? ` C${pad.choke}` : '') : '';
     const cv = el.querySelector('canvas'), g = cv.getContext('2d');
     g.clearRect(0, 0, cv.width, cv.height);
@@ -587,7 +609,7 @@ function dropOnPad(i, file) {
 }
 
 // ---------- kits ----------
-const padSettings = p => ({ key: fileKey(p.file), name: p.file.name, start: p.start, end: p.end, mode: p.mode, vol: p.vol, pitch: p.pitch, pan: p.pan, reverse: p.reverse, choke: p.choke });
+const padSettings = p => ({ key: fileKey(p.file), name: p.file.name, start: p.start, end: p.end, mode: p.mode, vol: p.vol, pitch: p.pitch, pan: p.pan, reverse: p.reverse, choke: p.choke, seq: p.seq });
 
 function saveKit() {
     if (!bankOrder.length) return setStatus("Load some sounds first!");
@@ -596,7 +618,7 @@ function saveKit() {
     bankOrder.forEach(cat => {
         kitBanks[cat] = banks[cat].pads.map((p, i) => (p ? Object.assign({ i }, padSettings(p)) : null)).filter(Boolean);
     });
-    kits.unshift({ name, savedAt: Date.now(), banks: kitBanks });
+    kits.unshift({ name, savedAt: Date.now(), banks: kitBanks, machine: machineState() });
     store.set('sampler.kits', kits);
     $('kit-name').value = '';
     renderKits();
@@ -625,6 +647,7 @@ function loadKit(k) {
     });
     bankOrder = bankOrder.filter(cat => banks[cat].files.length || banks[cat].pads.some(Boolean));
     if (!placed) return setStatus(`None of "${k.name}"'s sounds are in the loaded folder`);
+    if (k.machine) applyMachineState(k.machine);
     showBank(bankOrder.includes(currentBank) ? currentBank : bankOrder[0]);
     setStatus(`Loaded kit "${k.name}"` + (missing ? ` · ${missing} sound(s) not in this folder` : ''));
 }

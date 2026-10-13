@@ -92,13 +92,16 @@ A second instrument for short sounds, played from the computer keyboard. Switch 
 - **Kits** save which sound sits on which key with all its settings; export/import as JSON.
 - Same master **Reverb / Delay / Drive**, limiter and **WAV recorder** as the mixer.
 
-Keys: `[` `]` change bank · `Space` stops everything.
+- **Drum machine**: click the small dot on a pad to make it an element: once **pulse** (plays on the step grid), twice **drift** (calls out freely, off the beat, slightly detuned), three times off. Draw a line on the canvas; each element has its own height, and the closer the line passes, the more it plays. Gaps are rests for the pulse. **Life**, **Reach**, **Organic** (swing, flams, loose timing) and **Mutate** (the line moves a bit each loop) shape it. Keys still play on top, and kits save the drawing.
+- **Walk through a sound**: drag the yellow part on the waveform to move it, or step it with ← →.
+
+Keys: `[` `]` change bank · `Enter` runs the drum machine · `Space` stops everything.
 
 ---
 
 ## Running it
 
-Just open `index.html` (mixer) or `sampler.html` (sampler) in a modern browser (Chrome, Edge, Firefox), or use the itch.io link above. Keep the `shared/` folder, `sampler.js`, `mixerabokalleb_logo.*` and `your_background.gif` next to them.
+Just open `index.html` (mixer) or `sampler.html` (sampler) in a modern browser (Chrome, Edge, Firefox), or use the itch.io link above. Keep the `shared/` folder, `sampler.js`, `machine.js`, `mixerabokalleb_logo.*` and `your_background.gif` next to them.
 
 The code that both instruments use lives in `shared/`: the master FX chain (`master.js`), the WAV recorder (`recorder.js`), buffer helpers (`dsp.js`), file loading and small utilities (`core.js`) and the shared look (`style.css`). They are plain scripts, no build step.
 
