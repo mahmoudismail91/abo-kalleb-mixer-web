@@ -1,0 +1,156 @@
+/* Shared look for the mixer and the sampler: brutalist, raw. */
+:root {
+    /* Brutalist, raw color palette */
+    --bg: #ffffff;
+    --panel: #f4f4f4;
+    --text: #000000;
+    --accent: #ffcc00;
+    --border-color: #000000;
+
+    --success: #00ff00;
+    --warning: #ff8800;
+    --danger: #ff0000;
+
+    --ambient: #990099;
+    --sync: #00ffff;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #ffffff;
+    color: var(--text);
+    margin: 0; padding: 20px;
+    display: flex; flex-direction: column; align-items: center;
+}
+/* The animated background lives on its own fixed layer: scrolling no longer repaints it every frame. */
+body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1;
+    background: url('../your_background.gif') repeat;
+    will-change: transform;
+}
+
+.main-logo {
+    display: block; margin: 0 auto 20px auto; max-width: 100%; width: 400px; height: auto;
+}
+
+.container {
+    width: 100%; max-width: 1000px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+
+.frame {
+    background: var(--panel); padding: 15px;
+    border: 3px solid var(--border-color);
+    box-shadow: 6px 6px 0px var(--border-color);
+    border-radius: 0;
+}
+.frame h3, #drawer h3 { margin: 0; color: var(--border-color); text-transform: uppercase; }
+
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; flex: 1; gap: 10px; }
+
+button {
+    border: 2px solid var(--border-color); padding: 10px 15px; border-radius: 0;
+    color: #000; font-weight: bold; cursor: pointer; transition: 0.1s;
+    background-color: var(--accent); text-transform: uppercase;
+    letter-spacing: 1px; box-shadow: 3px 3px 0px var(--border-color);
+    font-family: inherit;
+}
+button:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-grey { background: #dddddd; }
+.btn-orange { background: var(--warning); }
+.btn-play { background: var(--success); font-size: 16px; flex: 2; }
+.btn-record { background: var(--danger); }
+.btn-small { padding: 5px 9px; box-shadow: 2px 2px 0px var(--border-color); letter-spacing: 0; }
+.btn-on { background: var(--accent) !important; }
+
+input[type="file"] { display: none; }
+.file-label {
+    background-color: #dddddd; padding: 10px 15px; border: 2px solid var(--border-color);
+    box-shadow: 3px 3px 0px var(--border-color); cursor: pointer; font-weight: bold;
+    display: inline-block; text-align: center; color: #000; text-transform: uppercase;
+    letter-spacing: 1px; transition: 0.1s;
+}
+.file-label:hover { background-color: #bbbbbb; transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
+.file-label.btn-small { padding: 5px 9px; box-shadow: 2px 2px 0px var(--border-color); letter-spacing: 0; font-size: 13px; }
+
+.slider-container { display: flex; flex-direction: column; align-items: center; font-size: 14px; color: #000; font-weight: bold; }
+/* pan-y: a vertical swipe that starts on a slider scrolls the page instead of grabbing the knob */
+input[type="range"] { cursor: pointer; width: 120px; accent-color: #000; touch-action: pan-y; }
+input[type="number"], input[type="text"], select {
+    font-family: inherit; font-weight: bold; font-size: 13px; color: #000; background: #fff;
+    border: 2px solid var(--border-color); border-radius: 0; padding: 4px 6px;
+}
+input[type="number"] { width: 64px; }
+select.btn-select {
+    background: #dddddd; padding: 9px 8px; font-size: 13px; text-transform: uppercase;
+    box-shadow: 3px 3px 0px var(--border-color); cursor: pointer;
+}
+select.btn-select.btn-on { background: var(--accent); }
+
+#status-label { font-size: 14px; color: #000; text-align: right; font-weight: bold; flex: 1; min-width: 160px; }
+.hint { font-size: 12px; margin-top: 12px; text-align: center; }
+.mode-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.bpm-box { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 14px; }
+
+.role-row, .snap-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #fff; border: 2px solid var(--border-color); padding: 8px 10px; margin-top: 10px;
+}
+.role-name, .snap-name { flex: 1; min-width: 140px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-row label { font-weight: bold; font-size: 13px; }
+.snap-info { font-size: 12px; }
+.empty-note { font-size: 13px; margin-top: 10px; }
+#roles-removed { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; font-weight: bold; }
+
+details.frame summary { cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 17px; }
+details.frame p, details.frame li { font-size: 14px; line-height: 1.5; }
+/* settings drawer */
+.menu-btn {
+    position: fixed; top: 14px; right: 14px; z-index: 30;
+    font-size: 22px; padding: 6px 13px; line-height: 1; background: #fff;
+}
+/* back to the main site, mirrors the settings button on the left */
+.back-btn {
+    position: fixed; top: 14px; left: 14px; z-index: 30;
+    border: 2px solid var(--border-color); box-shadow: 3px 3px 0px var(--border-color);
+    font-size: 22px; font-weight: bold; padding: 6px 13px; line-height: 1;
+    background: #fff; color: #000; text-decoration: none; transition: 0.1s;
+}
+.back-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); background: var(--accent); }
+#drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 100%); box-sizing: border-box;
+    background: var(--panel); border-left: 3px solid var(--border-color); box-shadow: -6px 0 0 var(--border-color);
+    padding: 18px 16px 40px; overflow-y: auto; z-index: 40;
+    transform: translateX(110%); transition: transform 0.25s ease; visibility: hidden;
+}
+#drawer.open { transform: none; visibility: visible; }
+#drawer h4 { margin: 22px 0 6px; text-transform: uppercase; font-size: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; }
+#drawer p { font-size: 13px; margin: 6px 0; line-height: 1.4; }
+#drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.25); z-index: 35; }
+#drawer-backdrop[hidden] { display: none; }
+
+#drop-overlay {
+    position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 204, 0, 0.85); border: 8px dashed #000;
+    font-size: 28px; font-weight: bold; text-transform: uppercase; text-align: center; padding: 20px;
+}
+#drop-overlay[hidden] { display: none; }
+
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    .menu-btn { top: 8px; right: 8px; }
+    .back-btn { top: 8px; left: 8px; }
+}
+
+/* switch between the mixer and the sampler */
+.page-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 4px; }
+.page-tabs a {
+    border: 2px solid var(--border-color); box-shadow: 3px 3px 0 var(--border-color); background: #fff;
+    color: #000; text-decoration: none; font-weight: bold; text-transform: uppercase; padding: 6px 14px;
+}
+.page-tabs a:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--border-color); }
+.page-tabs a.current { background: var(--accent); }
