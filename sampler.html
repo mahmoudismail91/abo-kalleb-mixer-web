@@ -49,8 +49,8 @@
 
         .machine-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 12px; }
         .machine-controls .slider-container input { width: 100px; }
-        canvas#m-draw {
-            width: 100%; height: 200px; display: block; margin-top: 12px; box-sizing: border-box;
+        canvas#m-map {
+            width: 100%; height: 380px; display: block; margin-top: 12px; box-sizing: border-box;
             border: 2px solid var(--border-color); background: #fff; cursor: crosshair; touch-action: none;
         }
 
@@ -73,7 +73,7 @@
             .pad { min-height: 54px; padding: 3px; }
             .pad-key { font-size: 15px; }
             .pad-name, .pad canvas, .pad-mode { display: none; }
-            canvas#m-draw { height: 160px; }
+            canvas#m-map { height: 160px; }
             .pad.mode-loop, .pad.mode-gate { border-style: dashed; }
         }
     </style>
@@ -116,40 +116,32 @@
                 <div id="status-label">Load a folder of short sounds...</div>
             </div>
             <div class="pads" id="pads"></div>
-            <div class="hint">Play with your keyboard: 1-0 · Q-P · A-L · Z-M · Shift+key selects without playing · ← → walk the selected pad through its file · [ ] change bank · Enter runs the drum machine · Space stops everything · drop a file on a pad to put it there</div>
+            <div class="hint">Play with your keyboard: 1-0 · Q-P · A-L · Z-M · Shift+key selects without playing · ← → walk the selected pad through its file · [ ] change bank · Enter wakes the swamp · Space stops everything · drop a file on a pad to put it there</div>
         </div>
 
         <div class="frame">
             <div class="row">
-                <h3>Drum Machine</h3>
+                <h3>Swamp</h3>
                 <div class="row" style="justify-content: flex-end;">
                     <button id="m-run" class="btn-play" style="flex: none; min-width: 110px; white-space: nowrap;" onclick="toggleMachine()" title="Enter">▶ Run</button>
-                    <button class="btn-grey btn-small" onclick="randomDrawing()">🎲 Draw for me</button>
-                    <button class="btn-grey btn-small" id="m-erase" onclick="toggleErase()" title="Or draw with Shift / right mouse button">⌫ Erase</button>
-                    <button class="btn-grey btn-small" onclick="clearDrawing()">✕ Clear</button>
+                    <button class="btn-grey btn-small" onclick="scatterCreatures()">🎲 Scatter</button>
+                    <button class="btn-grey btn-small" onclick="clearCurrents()">✕ Clear Currents</button>
                 </div>
             </div>
-            <canvas id="m-draw" title="Draw a line: elements close to it play, gaps are rests. Shift or right button erases."></canvas>
+            <canvas id="m-map" title="Drag a creature to move or throw it. Draw on empty water to make a current. Shift or right button erases currents."></canvas>
             <div class="machine-controls">
                 <label class="bpm-box">BPM <input type="number" id="m-bpm" min="40" max="240" step="1" value="96"></label>
-                <label class="bpm-box">Steps
-                    <select id="m-steps"><option value="16">16</option><option value="32" selected>32</option><option value="64">64</option></select>
-                </label>
-                <div class="slider-container" title="How much the elements play">
+                <div class="slider-container" title="How much the creatures play">
                     <label>Life: <span id="m-life-val"></span></label>
                     <input type="range" id="m-life" min="0" max="1" step="0.01" value="0.7">
                 </div>
-                <div class="slider-container" title="How far from the line an element still hears it">
-                    <label>Reach: <span id="m-spread-val"></span></label>
-                    <input type="range" id="m-spread" min="0.08" max="1" step="0.01" value="0.35">
+                <div class="slider-container" title="How fast creatures roam and how fast day turns to night">
+                    <label>Evolve: <span id="m-evolve-val"></span></label>
+                    <input type="range" id="m-evolve" min="0" max="1" step="0.01" value="0.4">
                 </div>
-                <div class="slider-container" title="Loose timing, swing, flams, detune">
+                <div class="slider-container" title="Loose timing, swing, detune">
                     <label>Organic: <span id="m-organic-val"></span></label>
                     <input type="range" id="m-organic" min="0" max="1" step="0.01" value="0.5">
-                </div>
-                <div class="slider-container" title="The line moves a little every loop">
-                    <label>Mutate: <span id="m-mutate-val"></span></label>
-                    <input type="range" id="m-mutate" min="0" max="1" step="0.01" value="0">
                 </div>
             </div>
         </div>
@@ -238,7 +230,10 @@
             <p>Load a folder of short sounds (or drop one anywhere). Each subfolder becomes a <b>bank</b> of up to 36 pads, laid out like your keyboard. Hit the keys to play. Everything stays on your computer; nothing is uploaded.</p>
             <ul>
                 <li>Click a pad (or Shift+its key) to edit it: drag the red edges on the waveform to trim it, drag the yellow part to move it along the file (or step it with ← →), pick <b>One-shot</b>, <b>Hold</b> (plays while the key is down) or <b>Loop</b> (hit once to start, again to stop), and set volume, pitch, pan and reverse.</li>
-                <li><b>Drum machine</b>: click the small dot on a pad to make it an element. Once = <b>pulse</b> (yellow, plays on the beat grid), twice = <b>drift</b> (green, calls out freely, off the beat, a little detuned), three times = off. Then <b>draw a line</b>: each element sits at its own height (its lane), and the closer the line passes to it, the more it plays. Gaps in the line are rests for the pulse; drifting elements keep calling. <b>Life</b> is how busy it gets, <b>Reach</b> how far from the line elements still respond, <b>Organic</b> loosens timing with swing, flams and detune, and <b>Mutate</b> lets the line move a little every loop. You can still play the keys on top. Kits save the drawing too.</li>
+                <li><b>Swamp</b>: click the small dot on a pad to put that sound on the map as a creature. Once = <b>settled</b> (yellow, stays roughly where you put it), twice = <b>wanderer</b> (green, roams between areas), three times = off the map. Press <b>Run</b> (Enter).</li>
+                <li>Where a creature sits is how it sounds. Closer to the centre = louder, left/right = stereo. Each area has its own behaviour: the <b>Clearing</b> in the middle grooves on the beat, <b>Water</b> plays hits that ripple out in falling echoes, <b>Reeds</b> chatter in fast insect bursts, <b>Mud</b> gives rare deep swells, and in the <b>Canopy</b> one creature calls and the others answer.</li>
+                <li>It keeps changing on its own: creatures wander, tire when they play a lot and recover when quiet, and a slow day and night shifts which areas are loud (reeds and mud wake at night, the canopy by day). <b>Evolve</b> sets how fast all that happens.</li>
+                <li>Drag a creature to move it, or flick it to throw it. Draw on the map to make <b>currents</b> that carry creatures along. Pressing a creature's key feeds it: it plays, grows, steps towards the centre and wakes up its neighbours.</li>
                 <li><b>Choke</b> groups cut each other off: put an open and a closed hi-hat in the same group.</li>
                 <li><b>🎲 Re-roll</b> swaps a pad, or the whole bank, for other sounds from the same folder, so the archive keeps surprising you.</li>
                 <li><b>✂ Chop</b> cuts a longer sound into 4, 8 or 16 equal parts across the following pads.</li>

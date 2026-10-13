@@ -103,7 +103,8 @@ function newPad(file, like = null) {
         start: 0, end: 0,
         mode: like ? like.mode : 'shot', vol: like ? like.vol : 0.8, pitch: like ? like.pitch : 0,
         pan: like ? like.pan : 0, reverse: like ? like.reverse : false, choke: like ? like.choke : 0,
-        seq: like ? like.seq || 0 : 0,   // drum machine state: 0 off, 1 pulse, 2 drift (see machine.js)
+        // swamp map (machine.js): 0 off the map, 1 settled, 2 wanderer, and where it sits
+        seq: like ? like.seq || 0 : 0, mx: like ? like.mx ?? null : null, my: like ? like.my ?? null : null,
     };
 }
 
@@ -183,6 +184,7 @@ function trigger(i) {
     if (pad.mode !== 'shot') release(pad, 0.01);
     startVoice(pad, audioCtx.currentTime, { loop: pad.mode === 'loop' });
     flashPad(i);
+    machineFeed(pad);
 }
 
 // Starts one voice of a pad at `when`. o: loop, gain (x pad vol), detune (semitones on top of the pad's pitch),
@@ -307,7 +309,7 @@ function renderPads() {
             el.className = 'pad';
             el.dataset.i = i;
             el.innerHTML = '<span class="pad-key"></span><span class="pad-mode"></span><canvas width="60" height="18"></canvas><span class="pad-name"></span>' +
-                '<span class="pad-seq" title="Drum machine: click for pulse, again for drift, again for off"></span>';
+                '<span class="pad-seq" title="Swamp: click to put it on the map (settled), again to let it wander, again to take it off"></span>';
             el.querySelector('.pad-key').textContent = keyLabel(code);
             el.querySelector('.pad-seq').addEventListener('pointerdown', (e) => {
                 e.preventDefault();
@@ -609,7 +611,7 @@ function dropOnPad(i, file) {
 }
 
 // ---------- kits ----------
-const padSettings = p => ({ key: fileKey(p.file), name: p.file.name, start: p.start, end: p.end, mode: p.mode, vol: p.vol, pitch: p.pitch, pan: p.pan, reverse: p.reverse, choke: p.choke, seq: p.seq });
+const padSettings = p => ({ key: fileKey(p.file), name: p.file.name, start: p.start, end: p.end, mode: p.mode, vol: p.vol, pitch: p.pitch, pan: p.pan, reverse: p.reverse, choke: p.choke, seq: p.seq, mx: p.mx, my: p.my });
 
 function saveKit() {
     if (!bankOrder.length) return setStatus("Load some sounds first!");

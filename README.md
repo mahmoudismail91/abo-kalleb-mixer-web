@@ -92,10 +92,10 @@ A second instrument for short sounds, played from the computer keyboard. Switch 
 - **Kits** save which sound sits on which key with all its settings; export/import as JSON.
 - Same master **Reverb / Delay / Drive**, limiter and **WAV recorder** as the mixer.
 
-- **Drum machine**: click the small dot on a pad to make it an element: once **pulse** (plays on the step grid), twice **drift** (calls out freely, off the beat, slightly detuned), three times off. Draw a line on the canvas; each element has its own height, and the closer the line passes, the more it plays. Gaps are rests for the pulse. **Life**, **Reach**, **Organic** (swing, flams, loose timing) and **Mutate** (the line moves a bit each loop) shape it. Keys still play on top, and kits save the drawing.
+- **Swamp**: click the small dot on a pad to put that sound on a map as a creature (once settled, twice wanderer, three times off). Closer to the centre is louder, left/right is stereo, and each area has its own behaviour: the **Clearing** grooves on the beat, **Water** ripples in falling echoes, **Reeds** chatter in insect bursts, **Mud** gives rare deep swells, and in the **Canopy** creatures call and answer. Creatures wander, tire and recover, a slow day/night shifts which areas are loud, and currents you draw carry them along. Drag or throw creatures; pressing a creature's key feeds it and wakes its neighbours. **Life**, **Evolve** and **Organic** shape it, and kits save the map.
 - **Walk through a sound**: drag the yellow part on the waveform to move it, or step it with ← →.
 
-Keys: `[` `]` change bank · `Enter` runs the drum machine · `Space` stops everything.
+Keys: `[` `]` change bank · `Enter` wakes the swamp · `Space` stops everything.
 
 ---
 
