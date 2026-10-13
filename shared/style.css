@@ -145,3 +145,12 @@ details.frame p, details.frame li { font-size: 14px; line-height: 1.5; }
     .menu-btn { top: 8px; right: 8px; }
     .back-btn { top: 8px; left: 8px; }
 }
+
+/* switch between the mixer and the sampler */
+.page-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 4px; }
+.page-tabs a {
+    border: 2px solid var(--border-color); box-shadow: 3px 3px 0 var(--border-color); background: #fff;
+    color: #000; text-decoration: none; font-weight: bold; text-transform: uppercase; padding: 6px 14px;
+}
+.page-tabs a:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--border-color); }
+.page-tabs a.current { background: var(--accent); }

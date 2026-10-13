@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐋 AL HUT Sampler 🐋</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .page-title {
+            margin: 0 auto 4px; font-size: clamp(28px, 7vw, 52px); text-transform: uppercase; letter-spacing: 2px;
+            background: var(--accent); border: 3px solid var(--border-color); box-shadow: 6px 6px 0 var(--border-color);
+            padding: 6px 18px; text-align: center;
+        }
+
+        .bank-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .bank-bar button { padding: 6px 10px; font-size: 13px; }
+
+        /* the pad grid mirrors the keyboard: each row is offset like the real keys */
+        .pads { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .pad-row { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+        .pad-row[data-row="2"] { padding-left: 3%; }
+        .pad-row[data-row="3"] { padding-left: 6%; }
+        .pad {
+            position: relative; min-height: 74px; padding: 5px 6px 4px; box-sizing: border-box;
+            background: #fff; border: 2px solid var(--border-color); box-shadow: 3px 3px 0 var(--border-color);
+            cursor: pointer; user-select: none; touch-action: none; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .pad.empty { background: #eee; color: #777; }
+        .pad.selected { outline: 3px solid var(--sync); outline-offset: 1px; }
+        .pad.on { background: var(--accent); }
+        .pad.hit { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--border-color); background: var(--success); }
+        .pad.loading { opacity: 0.5; }
+        .pad-key { font-size: 20px; font-weight: bold; line-height: 1; }
+        .pad-mode { position: absolute; top: 5px; right: 6px; font-size: 10px; font-weight: bold; }
+        .pad-name { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pad canvas { width: 100%; height: 18px; display: block; }
+
+        .editor-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .editor-name { flex: 1; min-width: 160px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        canvas#ed-wave {
+            width: 100%; height: 90px; display: block; margin: 12px 0; box-sizing: border-box;
+            border: 2px solid var(--border-color); background: #fff; cursor: ew-resize; touch-action: pan-y;
+        }
+        .ed-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-around; }
+        .seg { display: flex; }
+        .seg button { box-shadow: none; padding: 6px 10px; font-size: 12px; background: #ddd; }
+        .seg button + button { border-left: 0; }
+        .seg button.btn-on { background: var(--accent); }
+        .ed-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        #editor[hidden] { display: none; }
+
+        @media (max-width: 700px) {
+            .pad-row { gap: 4px; }
+            .pad { min-height: 54px; padding: 3px; }
+            .pad-key { font-size: 15px; }
+            .pad-name, .pad canvas, .pad-mode { display: none; }
+            .pad.mode-loop, .pad.mode-gate { border-style: dashed; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="/" class="back-btn" title="Back to main" aria-label="Back to main" hidden>←</a>
+    <script>
+        // Only on the home site; on itch.io, GitHub or a local copy there is no "main" to go back to.
+        if (/(^|\.)alhutmusic\.com$/.test(location.hostname)) document.querySelector('.back-btn').hidden = false;
+    </script>
+
+    <div id="drop-overlay" hidden>Drop a folder to fill the pads, or drop a file onto one pad</div>
+
+    <div class="container">
+        <h1 class="page-title">Sampler Abo Kalleb</h1>
+        <div class="page-tabs"><a href="index.html">🎛 Mixer</a><a href="sampler.html" class="current">🎹 Sampler</a></div>
+
+        <div class="frame row">
+            <div class="col">
+                <label for="folder-upload" class="file-label">📁 Load Sample Folder</label>
+                <input type="file" id="folder-upload" webkitdirectory directory multiple>
+                <label for="files-upload" class="file-label">🎵 Load Files</label>
+                <input type="file" id="files-upload" multiple accept="audio/*,.mp3,.wav,.flac,.ogg,.oga,.m4a,.aac,.aif,.aiff,.opus,.webm">
+            </div>
+            <div class="col" style="flex: 2;">
+                <div class="row">
+                    <button class="btn-orange" style="flex: 1;" onclick="rerollBank()" title="Fill every pad of this bank with other sounds from its folder">🎲 Re-roll Bank</button>
+                    <button class="btn-grey" style="flex: 1;" onclick="stopAll()" title="Space">⏹ Stop All</button>
+                </div>
+                <div class="row">
+                    <button id="btn-record" class="btn-record" style="flex: 1;" onclick="toggleRecord()">🔴 RECORD (WAV)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="frame">
+            <div class="row" style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
+                <div class="bank-bar" id="bank-bar"></div>
+                <div id="status-label">Load a folder of short sounds...</div>
+            </div>
+            <div class="pads" id="pads"></div>
+            <div class="hint">Play with your keyboard: 1-0 · Q-P · A-L · Z-M · Shift+key selects without playing · [ ] change bank · Space stops everything · drop a file on a pad to put it there</div>
+        </div>
+
+        <div class="frame" id="editor" hidden>
+            <div class="editor-head">
+                <h3 id="ed-key">Pad</h3>
+                <span class="editor-name" id="ed-name"></span>
+                <button class="btn-small" onclick="previewSelected()">▶ Play</button>
+            </div>
+            <canvas id="ed-wave" title="Drag to set where the sound starts and ends"></canvas>
+            <div class="ed-controls">
+                <div class="seg" id="ed-mode">
+                    <button data-mode="shot" title="Plays to the end every time you hit it">One-shot</button>
+                    <button data-mode="gate" title="Plays while the key is held">Hold</button>
+                    <button data-mode="loop" title="First hit starts a loop, next hit stops it">Loop</button>
+                </div>
+                <div class="slider-container">
+                    <label>Vol: <span id="ed-val-vol"></span></label>
+                    <input type="range" id="ed-vol" min="0" max="1.5" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Pitch: <span id="ed-val-pitch"></span></label>
+                    <input type="range" id="ed-pitch" min="-24" max="24" step="1">
+                </div>
+                <div class="slider-container">
+                    <label>Pan: <span id="ed-val-pan"></span></label>
+                    <input type="range" id="ed-pan" min="-1" max="1" step="0.01">
+                </div>
+                <label class="bpm-box" title="Pads in the same group cut each other off, like an open and closed hi-hat">Choke
+                    <select id="ed-choke">
+                        <option value="0">none</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    </select>
+                </label>
+                <button class="btn-grey btn-small" id="ed-reverse" title="Play backwards">⇆ Reverse</button>
+            </div>
+            <div class="ed-actions">
+                <button class="btn-orange btn-small" onclick="rerollPad(selectedBank(), selected)" title="Swap in another sound from this folder">🎲 Re-roll</button>
+                <button class="btn-grey btn-small" onclick="chopSelected(4)" title="Cut this sound into equal parts on this pad and the ones after it">✂ Chop 4</button>
+                <button class="btn-grey btn-small" onclick="chopSelected(8)">✂ Chop 8</button>
+                <button class="btn-grey btn-small" onclick="chopSelected(16)">✂ Chop 16</button>
+                <button class="btn-grey btn-small" onclick="resetTrim()">↔ Full Length</button>
+                <button class="btn-grey btn-small" onclick="clearPad()">✕ Clear Pad</button>
+            </div>
+        </div>
+
+        <div class="frame">
+            <div class="row" style="justify-content: space-around;">
+                <div class="slider-container">
+                    <label>Master Vol: <span id="val-master">0.70</span></label>
+                    <input type="range" id="sl-master" min="0" max="1" value="0.7" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Reverb: <span id="val-reverb">0.00</span></label>
+                    <input type="range" id="sl-reverb" min="0" max="1" value="0" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Delay: <span id="val-delay">0.00</span></label>
+                    <input type="range" id="sl-delay" min="0" max="1" value="0" step="0.01">
+                </div>
+                <div class="slider-container">
+                    <label>Drive: <span id="val-drive">0.00</span></label>
+                    <input type="range" id="sl-drive" min="0" max="1" value="0" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div class="frame">
+            <div class="row">
+                <h3>Kits</h3>
+                <div class="row" style="justify-content: flex-end;">
+                    <input type="text" id="kit-name" placeholder="name this kit..." maxlength="80">
+                    <button class="btn-small" onclick="saveKit()">💾 Save</button>
+                    <button class="btn-grey btn-small" onclick="exportKits()">⬇ Export</button>
+                    <label for="kit-import" class="file-label btn-small">⬆ Import</label>
+                    <input type="file" id="kit-import" accept=".json,application/json">
+                </div>
+            </div>
+            <div id="kit-list"></div>
+        </div>
+
+        <details class="frame">
+            <summary>❓ How it works</summary>
+            <p>Load a folder of short sounds (or drop one anywhere). Each subfolder becomes a <b>bank</b> of up to 36 pads, laid out like your keyboard. Hit the keys to play. Everything stays on your computer; nothing is uploaded.</p>
+            <ul>
+                <li>Click a pad (or Shift+its key) to edit it: drag on the waveform to set where it starts and ends, pick <b>One-shot</b>, <b>Hold</b> (plays while the key is down) or <b>Loop</b> (hit once to start, again to stop), and set volume, pitch, pan and reverse.</li>
+                <li><b>Choke</b> groups cut each other off: put an open and a closed hi-hat in the same group.</li>
+                <li><b>🎲 Re-roll</b> swaps a pad, or the whole bank, for other sounds from the same folder, so the archive keeps surprising you.</li>
+                <li><b>✂ Chop</b> cuts a longer sound into 4, 8 or 16 equal parts across the following pads.</li>
+                <li>Drop a single file onto a pad to put it there. Pads keep the first 30 s of a sound (2 minutes when dropped on a pad).</li>
+                <li><b>Kits</b> remember which sound sits on which key with all its settings. Load the same folder later and recall them.</li>
+                <li><b>RECORD</b> captures what you play to a WAV file. Works on the keyboard layout you have, Arabic included: it's the key position that counts.</li>
+            </ul>
+        </details>
+    </div>
+
+    <script src="shared/core.js"></script>
+    <script src="shared/dsp.js"></script>
+    <script src="shared/master.js"></script>
+    <script src="shared/recorder.js"></script>
+    <script src="sampler.js"></script>
+</body>
+</html>

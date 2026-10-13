@@ -79,9 +79,28 @@ Name a moment and **Save** it: layers, slices and settings. Recall it any time. 
 
 ---
 
+## Sampler (`sampler.html`)
+
+A second instrument for short sounds, played from the computer keyboard. Switch between the two with the **Mixer / Sampler** tabs at the top.
+
+- **Load a folder** of short sounds. Each subfolder becomes a **bank** of up to 36 pads laid out like the keyboard: `1`-`0`, `Q`-`P`, `A`-`L`, `Z`-`M`. Keys are read by position, so any keyboard language works.
+- **Edit a pad**: click it (or Shift+key). Drag on the waveform to set start and end, choose **One-shot**, **Hold** (plays while the key is down) or **Loop** (hit to start, hit to stop), and set volume, pitch (±24 semitones), pan and reverse.
+- **Choke groups**: pads in the same group cut each other off.
+- **🎲 Re-roll** a pad or the whole bank with other sounds from the same folder.
+- **✂ Chop** a longer sound into 4, 8 or 16 equal pads.
+- **Drop a file on a pad** to put it there (up to 2 minutes of it, for chopping). Files over 25 MB stay off the pads when a folder fills them.
+- **Kits** save which sound sits on which key with all its settings; export/import as JSON.
+- Same master **Reverb / Delay / Drive**, limiter and **WAV recorder** as the mixer.
+
+Keys: `[` `]` change bank · `Space` stops everything.
+
+---
+
 ## Running it
 
-Just open `index.html` in a modern browser (Chrome, Edge, Firefox), or use the itch.io link above. Keep `mixerabokalleb_logo.*` and `your_background.gif` next to it.
+Just open `index.html` (mixer) or `sampler.html` (sampler) in a modern browser (Chrome, Edge, Firefox), or use the itch.io link above. Keep the `shared/` folder, `sampler.js`, `mixerabokalleb_logo.*` and `your_background.gif` next to them.
+
+The code that both instruments use lives in `shared/`: the master FX chain (`master.js`), the WAV recorder (`recorder.js`), buffer helpers (`dsp.js`), file loading and small utilities (`core.js`) and the shared look (`style.css`). They are plain scripts, no build step.
 
 Note: when opened straight from disk some browsers can't use AudioWorklet; the recorder falls back to a ScriptProcessor automatically.
 
